@@ -1,1 +1,1 @@
-SeaFight Online Team A
+SeaFight Two Players Team A
