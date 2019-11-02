@@ -17,21 +17,22 @@ import { BattlefieldService } from 'src/app/services/battlefield.service';
 })
 export class SettingsfieldComponent {
 
-  constructor (
+  private ships: Ship[];
+
+  constructor(
     private shipsService: ShipsService,
     private battlefieldService: BattlefieldService,
     private gameService: GameService
-  ) {}
+  ) { }
 
-  onAuto() {
-    let ships:Array<Ship> = this.shipsService.generateShips();
-    this.gameService.player.ships = ships;
+  onAuto(): void {
+    this.ships = this.shipsService.generateShips();
+    this.gameService.player.ships = this.ships;
     this.gameService.player.field = this.battlefieldService.getField(this.gameService.player.ships);
-
     this.gameService.readyToPlay = true;
   }
 
-  onPlay() {
+  onPlay(): void {
     this.gameService.gameOn = true;
     this.gameService.game();
   }

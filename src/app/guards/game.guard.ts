@@ -1,5 +1,15 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, CanActivateChild, CanLoad, Route, UrlSegment, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
+import {
+  CanActivate,
+  CanActivateChild,
+  CanLoad,
+  Route,
+  UrlSegment,
+  ActivatedRouteSnapshot,
+  RouterStateSnapshot,
+  UrlTree,
+  Router
+} from '@angular/router';
 import { Observable } from 'rxjs';
 import { GameService } from '../services/game.service';
 
@@ -15,22 +25,32 @@ export class GameGuard implements CanActivate, CanActivateChild, CanLoad {
 
   canActivate(
     next: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    state: RouterStateSnapshot): Observable<boolean | UrlTree>
+      | Promise<boolean | UrlTree>
+      | boolean
+      | UrlTree {
 
-    if (this.gameService.player.username != '') {
-      return true
+    if (this.gameService.player.username !== '') {
+      return true;
     }
     this.router.navigate(['/login']);
-    return false
+    return false;
   }
   canActivateChild(
     next: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    state: RouterStateSnapshot): Observable<boolean | UrlTree>
+      | Promise<boolean | UrlTree>
+      | boolean
+      | UrlTree {
+
     return true;
   }
   canLoad(
     route: Route,
-    segments: UrlSegment[]): Observable<boolean> | Promise<boolean> | boolean {
+    segments: UrlSegment[]): Observable<boolean>
+      | Promise<boolean>
+      | boolean {
+
     return true;
   }
 }
