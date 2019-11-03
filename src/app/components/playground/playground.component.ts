@@ -9,6 +9,9 @@ import { GameService } from 'src/app/services/game.service';
   styleUrls: ['./playground.component.scss']
 })
 export class PlaygroundComponent {
+  constructor(
+    private gameService: GameService
+  ) { }
 
   advice;
   currentAdviceIndex:number = 0;
@@ -38,8 +41,4 @@ export class PlaygroundComponent {
     //   this.advice = null
     // }
   });
-
-  constructor(
-    private gameService: GameService
-  ) { }
 }
