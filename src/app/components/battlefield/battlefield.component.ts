@@ -23,7 +23,7 @@ export class BattlefieldComponent {
   ) { }
 
   onCellClick(cell: Cell): void {
-    const { coordX, coordY } = { ...cell };
+    const { coordX, coordY } = cell;
     if (this.isEnemyField && this.gameService.playerIsShooter) {
       this.gameService.onFire(coordX, coordY, 'enemy', 'player');
       if (!this.gameService.playerIsShooter) this.gameService.enemyOnFire();

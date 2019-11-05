@@ -11,11 +11,13 @@ import {
   Router
 } from '@angular/router';
 import { Observable } from 'rxjs';
+
 import { GameService } from '../services/game.service';
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class GameGuard implements CanActivate, CanActivateChild, CanLoad {
 
   constructor(
@@ -36,6 +38,7 @@ export class GameGuard implements CanActivate, CanActivateChild, CanLoad {
     this.router.navigate(['/login']);
     return false;
   }
+
   canActivateChild(
     next: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree>
@@ -45,6 +48,7 @@ export class GameGuard implements CanActivate, CanActivateChild, CanLoad {
 
     return true;
   }
+
   canLoad(
     route: Route,
     segments: UrlSegment[]): Observable<boolean>

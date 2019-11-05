@@ -6,7 +6,6 @@ import { ShipsService } from 'src/app/services/ships.service';
 import { GameService } from 'src/app/services/game.service';
 import { BattlefieldService } from 'src/app/services/battlefield.service';
 
-
 @Component({
   selector: 'app-settingsfield',
   templateUrl: './settingsfield.component.html',
@@ -15,6 +14,7 @@ import { BattlefieldService } from 'src/app/services/battlefield.service';
     './buttons.animation.scss'
   ]
 })
+
 export class SettingsfieldComponent {
 
   private ships: Ship[];

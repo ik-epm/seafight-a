@@ -1,8 +1,8 @@
-import { Cell } from './cell.interface';
+import { CoordsInterface } from './coords.interface';
 
 export interface Ship {
     id: string,
-    coords: Cell[],
+    coords: CoordsInterface[],
     type: string,
     size: number,
     hits: number,

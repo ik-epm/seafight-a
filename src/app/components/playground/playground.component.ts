@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { timer } from 'rxjs';
 
-import { AdviceInterface } from 'src/app/interfaces/advice.interface';
+import { GameAdviceInterface } from 'src/app/interfaces/gameAdvice.interface';
 
 import { GameService } from 'src/app/services/game.service';
 
@@ -17,7 +17,7 @@ import { GameService } from 'src/app/services/game.service';
 
 export class PlaygroundComponent {
 
-  public advice: AdviceInterface;
+  public advice: GameAdviceInterface;
   private currentAdviceIndex = 0;
 
   constructor(
@@ -25,10 +25,11 @@ export class PlaygroundComponent {
   ) { }
 
   advice$ = timer(1e3, 15e3).subscribe(num => {
+    const { gameOn, gameOver, advices } = this.gameService;
     // if (num % 2) {
-      const generateAdvice = (adviceType: string): void => {
-        const getIndex = (): number => Math.round(Math.random() * ((num % this.gameService.advices[adviceType].length) || 1));
-        let index = getIndex();
+    const generateAdvice = (adviceType: string): void => {
+        const getIndex = (): number => Math.round(Math.random() * ((num % advices[adviceType].length) || 1));
+        let index: number = getIndex();
 
         let whileCounter = 0;
         while (index === this.currentAdviceIndex && whileCounter++ < 100) {
@@ -36,11 +37,12 @@ export class PlaygroundComponent {
         }
 
         this.currentAdviceIndex = index;
-        this.advice = this.gameService.advices[adviceType][index];
+        this.advice = advices[adviceType][index];
       };
-      if (this.gameService.gameOn && !this.gameService.gameOver) {
+
+      if (gameOn && !gameOver) {
         generateAdvice('gameAdvices');
-      } else if (this.gameService.gameOver) {
+      } else if (gameOver) {
         this.advice = null;
       } else {
         generateAdvice('preGameAdvices');

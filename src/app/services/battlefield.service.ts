@@ -1,38 +1,49 @@
 import { Injectable } from '@angular/core';
+
 import { Cell } from 'src/app/interfaces/cell.interface';
 import { Ship } from 'src/app/interfaces/ship.interface';
+import { CoordsInterface } from '../interfaces/coords.interface';
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class BattlefieldService {
 
-  constructor() { }
+  public fieldSize: number;
 
-  fieldSize:number;
-
-  getField (ships:Array<Ship>):Array<Array<Cell>> {
-    let field:Array<Array<Cell>> = [];
+  getField(ships: Ship[]): Cell[][] {
+    const field: Cell[][] = [];
 
     for (let coordX = 0; coordX < this.fieldSize; coordX++) {
-      let rows:Array<Cell> = [];
+      const rows: Cell[] = [];
+
       for (let coordY = 0; coordY < this.fieldSize; coordY++) {
-        let isShip:boolean = false;
-        let idShip:string = '';
-        rows.push({coordX, coordY, isShip, idShip});
+        const isShip = false;
+        const idShip = '';
+
+        rows.push({
+          coordX,
+          coordY,
+          isShip,
+          idShip
+        });
       }
       field.push(rows);
     }
 
-    ships.forEach((ship:Ship) => {
-      ship.coords.forEach((shipCell:Cell) => {
-        let fieldCell = field[shipCell.coordX][shipCell.coordY];
-        if (shipCell.coordX == fieldCell.coordX && shipCell.coordY == fieldCell.coordY) {
+    ships.forEach((ship: Ship) => {
+      const { id, coords } = ship;
+      coords.forEach((coordsCell: CoordsInterface) => {
+        const { coordX, coordY } = coordsCell;
+        const fieldCell: Cell = field[coordX][coordY];
+
+        if (coordX === fieldCell.coordX && coordY === fieldCell.coordY) {
           fieldCell.isShip = true;
-          fieldCell.idShip = ship.id;
+          fieldCell.idShip = id;
         }
-      })
-    })
+      });
+    });
 
     return field;
   }
