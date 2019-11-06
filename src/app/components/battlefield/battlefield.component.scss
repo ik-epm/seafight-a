@@ -33,6 +33,7 @@
 .miss {
     background-color: #fff;
     position: relative;
+
     &:before {
         content: "";
         position: absolute;
@@ -48,26 +49,15 @@
 .hit {
     position: relative;
     background-color: #1976d2;
+
     &:before,
     &:after {
         content: "";
         position: absolute;
-    }
-    &:after {
         width: 80%;
         height: 2px;
         background: #fff;
         top: 47%;
         left: 10%;
-        transform: rotate(45deg);
-    }
-
-    &:before {
-        width: 80%;
-        height: 2px;
-        background: #fff;
-        top: 47%;
-        left: 10%;
-        transform: rotate(-45deg);
     }
 }

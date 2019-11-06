@@ -1,31 +1,54 @@
-.fourdeckship,
-.threedeckship,
-.twodeckship,
-.onedeckship {
+.fourDeckShips,
+.threeDeckShips,
+.twoDeckShips,
+.oneDeckShips {
     display: inline-block;
     border: 2px solid #1976d2;
-    // border-radius: 3px;
-    // background-color: #1976d2;
-    height: 10%;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    border-radius: 3px;
+    background-color: #1976d2;
+    height: 100%;
     margin: 0px 10px 10px 0px;
-    cursor: move;
+    cursor: pointer;
     // &:hover {
         // border: 1px solid red;
     // }
 }
 
-.fourdeckship {
+.fourDeckShips {
     width: 40%;
 }
 
-.threedeckship {
+.threeDeckShips {
     width: 30%;
 }
 
-.onedeckship {
+.oneDeckShips {
     width: 10%;
 }
 
-.twodeckship {
+.twoDeckShips {
     width: 20%;
+}
+
+.ships-container {
+    height: 10%;
+    // outline: 1px solid red;
+    margin: 15px 0px;
+    position: relative;
+}
+
+.ships-number {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid #1976d2;
+    text-align: center;
+    background-color: #fff;
+
+    width: 22px;
+    height: 22px;
+    left: -10px;
+    top: -10px;
 }

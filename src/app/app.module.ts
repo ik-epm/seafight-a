@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule, ReactiveFormsModule }   from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
 import { DragDropModule } from '@angular/cdk/drag-drop';
@@ -21,7 +21,7 @@ const appRoutes: Routes = [
   {path: 'login', component: LoginComponent},
   {path: 'game', component: PlaygroundComponent, canActivate: [GameGuard]},
   {path: '', component: PlaygroundComponent, canActivate: [GameGuard]}
-]
+];
 
 @NgModule({
   declarations: [
@@ -32,7 +32,6 @@ const appRoutes: Routes = [
     SettingsfieldComponent,
     LoginComponent,
     ShipsComponent,
-    // ShipsComponent,
     // CellComponent
   ],
   imports: [
@@ -46,4 +45,5 @@ const appRoutes: Routes = [
   providers: [GameGuard],
   bootstrap: [AppComponent]
 })
+
 export class AppModule { }

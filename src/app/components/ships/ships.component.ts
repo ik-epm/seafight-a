@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import { GameService } from 'src/app/services/game.service';
+import { Component, Input, OnChanges } from '@angular/core';
+import {CdkDragDrop, moveItemInArray, transferArrayItem} from '@angular/cdk/drag-drop';
+
 import { ShipsService } from 'src/app/services/ships.service';
 
 @Component({
@@ -7,17 +8,33 @@ import { ShipsService } from 'src/app/services/ships.service';
   templateUrl: './ships.component.html',
   styleUrls: ['./ships.component.scss']
 })
-export class ShipsComponent implements OnInit {
+export class ShipsComponent implements OnChanges {
 
   constructor(
-    private gameService: GameService,
     private shipsService: ShipsService
   ) { }
 
-  ships = [];
+  @Input() shipsData;
 
-  ngOnInit() {
-    // this.ships = this.shipsService.
+
+  ngOnChanges() {
+      this.shipsService.playerShipsInit();
+  }
+
+  selectShip(ship) {
+    this.shipsService.currentShip = ship;
+  }
+
+  drop(event: CdkDragDrop<string[]>) {
+    console.log(event);
+    // if (event.previousContainer === event.container) {
+    //   moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    // } else {
+    //   transferArrayItem(event.previousContainer.data,
+    //                     event.container.data,
+    //                     event.previousIndex,
+    //                     event.currentIndex);
+    // }
   }
 
 }
