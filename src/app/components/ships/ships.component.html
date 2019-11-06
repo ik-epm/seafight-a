@@ -37,7 +37,13 @@
   *ngFor="let ships of shipsService.allShips; let i = index"
   class="ships-container" >
 
-  <span *ngFor="let ship of ships" [class]="shipsData[i].type" (click)="selectShip(shipsData[i])">
+  <span
+    *ngFor="let ship of ships"
+    [class]="shipsData[i].type"
+    [ngClass]= "{
+      currentShip: shipsService.currentShip?.type === ship.type
+    }"
+    (click)="selectShip(shipsData[i])">
   </span>
   <span
     *ngIf="ships.length !== 0"

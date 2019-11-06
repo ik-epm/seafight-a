@@ -1,6 +1,6 @@
-import { ShipsData } from './shipsData.interface';
+import { ShipsDataInterface } from './shipsData.interface';
 
 export interface ConfigsInterface {
   fieldSize?: number,
-  shipsData?: ShipsData[]
+  shipsData?: ShipsDataInterface[]
 }

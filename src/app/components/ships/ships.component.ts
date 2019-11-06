@@ -2,6 +2,7 @@ import { Component, Input, OnChanges } from '@angular/core';
 import {CdkDragDrop, moveItemInArray, transferArrayItem} from '@angular/cdk/drag-drop';
 
 import { ShipsService } from 'src/app/services/ships.service';
+import { ShipInterface } from 'src/app/interfaces/ship.interface';
 
 @Component({
   selector: 'app-ships',
@@ -18,10 +19,10 @@ export class ShipsComponent implements OnChanges {
 
 
   ngOnChanges() {
-      this.shipsService.playerShipsInit();
+    this.shipsService.playerShipsInit();
   }
 
-  selectShip(ship) {
+  selectShip(ship: ShipInterface): void {
     this.shipsService.currentShip = ship;
   }
 
@@ -36,5 +37,4 @@ export class ShipsComponent implements OnChanges {
     //                     event.currentIndex);
     // }
   }
-
 }

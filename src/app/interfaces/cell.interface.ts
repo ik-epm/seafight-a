@@ -1,6 +1,6 @@
-export interface Cell {
-    coordX: number,
-    coordY: number,
+import { CoordsInterface } from './coords.interface';
+
+export interface CellInterface extends CoordsInterface {
     isShip?: boolean,
     cellStatus?: string,
     idShip?: string

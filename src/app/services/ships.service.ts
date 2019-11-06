@@ -1,32 +1,33 @@
 import { Injectable } from '@angular/core';
 
-import { Cell } from 'src/app/interfaces/cell.interface';
-import { Ship } from 'src/app/interfaces/ship.interface';
-import { ShipsData } from 'src/app/interfaces/shipsData.interface';
+import { CellInterface } from 'src/app/interfaces/cell.interface';
+import { ShipInterface } from 'src/app/interfaces/ship.interface';
+import { ShipsDataInterface } from 'src/app/interfaces/shipsData.interface';
+import { CoordsInterface } from 'src/app/interfaces/coords.interface';
+
+import { ToolsService } from './tools.service';
 
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class ShipsService {
 
-  constructor() {
+  shipsData: ShipsDataInterface[];
+  fieldSize: number;
+  currentShip: ShipInterface = null;
+  allShips: any[][];
+  occupiedPlayerCells: boolean[][];
+
+  constructor(
+    private toolsService: ToolsService
+  ) {
     this.playerShipsInit();
   }
 
 
-  shipsData: Array<ShipsData>;
-  fieldSize: number;
-  currentShip: Ship = null;
-  allShips: any[][];
-  occupiedPlayerCells: boolean[][];
-
-  getRandom(min: number, max: number): number {
-    return Math.round (Math.random() * (max - min)) + min;
-  }
-
-
-  playerShipsInit() {
+  playerShipsInit(): void {
     this.allShips = [];
     this.occupiedPlayerCells = new Array(this.fieldSize).fill(null).map(() => {
       return new Array(this.fieldSize).fill(false);
@@ -40,29 +41,32 @@ export class ShipsService {
   }
 
 
-
-  replaceShip(currentShip: Ship, cell: Cell, direction: number): Ship {
-    const coords: Array<Cell> = [];
+  // ручная установка одного корабля
+  // аргументы: корабль, который нужно установить, начальная клетка и направление корабля
+  placeShip(currentShip: ShipInterface, cell: CellInterface, direction: number): ShipInterface {
+    const coords: Array<CellInterface> = [];
     const directionX: number = direction;                  // 0 = horizontal, 1 = vertical
     const directionY: number = directionX ? 0 : 1;         // 0 = vertical, 1 = horizontal
 
     const occupiedCells = this.occupiedPlayerCells;
     const size = currentShip.size;
 
-    if ((cell.coordX <= (this.fieldSize - 1) - (currentShip.size - 1) * directionX)
-      && (cell.coordY <= (this.fieldSize - 1) - (currentShip.size - 1) * directionY)
+    const maxCoordX = this.fieldSize - 1 - (size - 1 ) * directionX;
+    const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
+
+    if ((cell.coordX <= maxCoordX) && (cell.coordY <= maxCoordY)
       && !this.isOccupied(occupiedCells, size, cell.coordX, cell.coordY, directionX, directionY)) {
 
-      for (let i = 0; i < currentShip.size; i++) {
+      for (let i = 0; i < size; i++) {
         coords.push({coordX: cell.coordX + (i * directionX), coordY: cell.coordY + (i * directionY)});
         this.occupyCells(occupiedCells, coords[i]);
       }
 
-      const ship: Ship = {
+      const ship: ShipInterface = {
         id: currentShip.type + '-' + (cell.coordX) + ',' + (cell.coordY),
         coords,
         type: currentShip.type,
-        size: currentShip.size,
+        size,
         direction: directionX,
         hits: 0,
         isSunk: false
@@ -90,9 +94,18 @@ export class ShipsService {
   }
 
 
-  private isOccupied = (field: boolean[][], shipSize: number, coordX: number, coordY: number, directionX: number, directionY: number) => {
+  private isOccupied(
+    field: boolean[][],
+    shipSize: number,
+    coordX: number,
+    coordY: number,
+    directionX: number,
+    directionY: number): boolean {
+
     for (let i = 0; i < shipSize; i++) {
-      if (field[coordX + (i * directionX)][coordY + (i * directionY)]) {
+      const countCoordX = coordX + (i * directionX);
+      const countCoordY = coordY + (i * directionY);
+      if (field[countCoordX][countCoordY]) {
         return true;
       }
     }
@@ -100,17 +113,26 @@ export class ShipsService {
   }
 
 
-  occupyCells = (field: boolean[][], coords: Cell, occupingStatus: boolean = true) => {
+  occupyCells(field: boolean[][], coords: CellInterface, occupingStatus: boolean = true): void {
+    const setOccupingStatus = (x: number, y: number) => {
+      const isCell: boolean = field[x] !== undefined;
+      if (isCell) {
+        field[x][y] = occupingStatus;
+      }
+    };
+
+    const { coordX, coordY } = coords;
+
     for (let i = 0; i < 3; i++) {   // 3 - количество ячеек вокруг исходной ячейки
-      try { field[coords.coordX - 1] [coords.coordY - 1 + i] = occupingStatus; } catch {}
-      try { field[coords.coordX]     [coords.coordY - 1 + i] = occupingStatus; } catch {}
-      try { field[coords.coordX + 1] [coords.coordY - 1 + i] = occupingStatus; } catch {}
+      const countCoordY: number = coordY - 1 + i;
+      setOccupingStatus(coordX - 1, countCoordY);
+      setOccupingStatus(coordX, countCoordY);
+      setOccupingStatus(coordX + 1, countCoordY);
     }
   }
 
 
-
-  generateShips(): Array<Ship> {
+  generateShips(): ShipInterface[] {
     const occupiedCells = new Array(this.fieldSize).fill(null).map(() => {
       return new Array(this.fieldSize).fill(false);
     });
@@ -118,22 +140,25 @@ export class ShipsService {
     const oneTypeShips = (type: string, num: number, size: number) => {
       return new Array(num).fill(type).map((type, index) => {
 
-        const coords: Array<Cell> = [];
-        let coordX: number, coordY: number;
+        const coords: CellInterface[] = [];
+        let coordX: number;
+        let coordY: number;
 
-        const directionX: number = this.getRandom(0, 1);       // 0 = horizontal, 1 = vertical
-        const directionY: number = directionX ? 0 : 1;         // 0 = vertical, 1 = horizontal
-
+        const directionX: number = this.toolsService.getRandom(0, 1);       // 0 = horizontal, 1 = vertical
+        const directionY: number = directionX ? 0 : 1;                      // 0 = vertical, 1 = horizontal
 
         do {
-          const maxCoordX = this.fieldSize - 1 - (size - 1) * directionX;
-          const maxCoordY = this.fieldSize - 1 - (size - 1) * directionY;
-          coordX = this.getRandom(0, maxCoordX);
-          coordY = this.getRandom(0, maxCoordY);
+          const maxCoordX = this.fieldSize - 1 - (size - 1 ) * directionX;
+          const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
+          coordX = this.toolsService.getRandom(0, maxCoordX);
+          coordY = this.toolsService.getRandom(0, maxCoordY);
         } while (this.isOccupied (occupiedCells, size, coordX, coordY, directionX, directionY));
 
         for (let i = 0; i < size; i++) {
-          coords.push({coordX: coordX + (i * directionX), coordY: coordY + (i * directionY)});
+          coords.push({
+            coordX: coordX + (i * directionX),
+            coordY: coordY + (i * directionY)
+          });
           this.occupyCells(occupiedCells, coords[i]);
         }
 
@@ -142,19 +167,31 @@ export class ShipsService {
           coords,
           type,
           size,
+          direction: directionX,
           hits: 0,
           isSunk: false
         };
       });
+
     };
 
-    let ships: Array<Ship> = [];
-    for (const ship in this.shipsData) {
-      ships = [
-        ...ships,
-        ...(oneTypeShips(this.shipsData[ship].type, this.shipsData[ship].number, this.shipsData[ship].size))
-      ];
-    }
+    const ships: ShipInterface[] = [];
+
+    this.shipsData.forEach((ship, i) => {
+      ships.push(...oneTypeShips(
+        this.shipsData[i].type,
+        this.shipsData[i].number,
+        this.shipsData[i].size
+      ));
+    });
+
+    // Object.keys(this.shipsData).forEach((ship) => {
+    //   ships.push(...oneTypeShips(
+    //     this.shipsData[ship].type,
+    //     this.shipsData[ship].number,
+    //     this.shipsData[ship].size
+    //   ));
+    // });
 
     return ships;
   }

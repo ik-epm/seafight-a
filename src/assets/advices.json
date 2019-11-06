@@ -1,5 +1,14 @@
 {
-    "preGameAdvices": [],
+    "preGameAdvices": [
+        {
+            "title": "Locate your ships manually",
+            "paragraph": "Click on ship in stock and then click on your field. Your ship will be located on field. Click on ship in field to change direction of ship"
+        },
+        {
+            "title": "Locate your ships automatically",
+            "paragraph": "Click on AUTO button to locate your ships automatically"
+        }
+    ],
     "gameAdvices": [
         {
             "title": "Guess in diagonal lines",

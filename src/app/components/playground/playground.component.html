@@ -25,9 +25,10 @@
         </div>
         <div
           class="settingsfield hover"
-          [ngClass]="{ settingsRotate: gameService.gameOn }">
-            <app-settingsfield>
-            </app-settingsfield>
+          [ngClass]="{
+            settingsRotate: gameService.gameOn
+          }">
+            <app-settingsfield></app-settingsfield>
         </div>
     </div>
     <div class="advice">
@@ -43,10 +44,10 @@
     <div class="field-container">
         <div
           class="settingsfield hover"
-          *ngIf="gameService.message?.length">
+          *ngIf="gameService.messages?.length">
             <div class= "message">
                 <div
-                  *ngFor="let message of gameService.message; let i = index">
+                  *ngFor="let message of gameService.messages; let i = index">
                     {{message}}
                 </div>
             </div>

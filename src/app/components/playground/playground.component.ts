@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { timer } from 'rxjs';
+import { timer, Subscription } from 'rxjs';
 
-import { AdviceInterface } from 'src/app/interfaces/advice.interface';
+import { GameAdviceInterface } from 'src/app/interfaces/gameAdvice.interface';
 
 import { GameService } from 'src/app/services/game.service';
 
@@ -17,36 +17,37 @@ import { GameService } from 'src/app/services/game.service';
 
 export class PlaygroundComponent {
 
-  public advice: AdviceInterface;
+  public advice: GameAdviceInterface;
   private currentAdviceIndex = 0;
 
   constructor(
     private gameService: GameService
   ) { }
 
-  advice$ = timer(1e3, 15e3).subscribe(num => {
-    // if (num % 2) {
-      const generateAdvice = (adviceType: string): void => {
-        const getIndex = (): number => Math.round(Math.random() * ((num % this.gameService.advices[adviceType].length) || 1));
-        let index = getIndex();
+  // таймер, который дает советы каждые 15 секунд, начиная со второй секунды
+  advice$: Subscription = timer(2e3, 15e3).subscribe(num => {
+    const { gameOn, gameOver, advices } = this.gameService;
+    const generateAdvice = (adviceType: string): void => {
+      // генерируем рандомный номер подсказки
+      const getIndex = (): number => Math.round(Math.random() * ((num % advices[adviceType].length) || 1));
+      let index: number = getIndex();
 
-        let whileCounter = 0;
-        while (index === this.currentAdviceIndex && whileCounter++ < 100) {
-          index = getIndex();
-        }
-
-        this.currentAdviceIndex = index;
-        this.advice = this.gameService.advices[adviceType][index];
-      };
-      if (this.gameService.gameOn && !this.gameService.gameOver) {
-        generateAdvice('gameAdvices');
-      } else if (this.gameService.gameOver) {
-        this.advice = null;
-      } else {
-        generateAdvice('preGameAdvices');
+      // условие для того, чтобы не показывать подряд одинаковые подсказки
+      let whileCounter = 0;
+      while (index === this.currentAdviceIndex && whileCounter++ < 100) {
+        index = getIndex();
       }
-    // } else {
-    //   this.advice = null
-    // }
+
+      this.currentAdviceIndex = index;
+      this.advice = advices[adviceType][index];
+    };
+
+    if (gameOn && !gameOver) {
+      generateAdvice('gameAdvices');
+    } else if (gameOver) {
+      this.advice = null;
+    } else {
+      generateAdvice('preGameAdvices');
+    }
   });
 }

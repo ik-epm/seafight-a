@@ -1,22 +1,25 @@
 import { Injectable } from '@angular/core';
-import { HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-
-import { AdviceInterface } from 'src/app/interfaces/advice.interface';
+import { AdvicesInterface } from '../interfaces/advices.interface';
+import { ConfigsInterface } from '../interfaces/configs.interface';
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class HttpService {
 
-  constructor( private http: HttpClient ) { }
+  constructor(
+    private http: HttpClient
+  ) { }
 
-  getShipsData() {
-    return this.http.get('/assets/configs.json')
+  getShipsData(): Observable<ConfigsInterface> {
+    return this.http.get('/assets/configs.json');
   }
 
-  getAdvicesData(): Observable<{preGameAdvices?: Array<any>, gameAdvices?: Array<any>}> {
-    return this.http.get('/assets/advices.json')
+  getAdvicesData(): Observable<AdvicesInterface> {
+    return this.http.get('/assets/advices.json');
   }
 }
