@@ -1,8 +1,9 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule, ReactiveFormsModule }   from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { AppComponent } from './app.component';
 import { PlaygroundComponent } from './components/playground/playground.component';
@@ -11,7 +12,7 @@ import { RulesComponent } from './components/rules/rules.component';
 import { SettingsfieldComponent } from './components/settingsfield/settingsfield.component';
 import { LoginComponent } from './components/login/login.component';
 // import { CellComponent } from './components/cell/cell.component';
-// import { ShipsComponent } from './components/ships/ships.component';
+import { ShipsComponent } from './components/ships/ships.component';
 
 import { GameGuard } from './guards/game.guard';
 
@@ -20,7 +21,7 @@ const appRoutes: Routes = [
   {path: 'login', component: LoginComponent},
   {path: 'game', component: PlaygroundComponent, canActivate: [GameGuard]},
   {path: '', component: PlaygroundComponent, canActivate: [GameGuard]}
-]
+];
 
 @NgModule({
   declarations: [
@@ -30,12 +31,13 @@ const appRoutes: Routes = [
     RulesComponent,
     SettingsfieldComponent,
     LoginComponent,
-    // ShipsComponent,
+    ShipsComponent,
     // CellComponent
   ],
   imports: [
     FormsModule,
     ReactiveFormsModule,
+    DragDropModule,
     BrowserModule,
     HttpClientModule,
     RouterModule.forRoot(appRoutes)
@@ -43,4 +45,5 @@ const appRoutes: Routes = [
   providers: [GameGuard],
   bootstrap: [AppComponent]
 })
+
 export class AppModule { }

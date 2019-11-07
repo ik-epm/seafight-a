@@ -1,9 +1,11 @@
-import { Cell } from './cell.interface';
-export interface Ship {
-    id:string,
-    coords:Array<Cell>,
-    type:string,
-    size:number,
-    hits:number,
+import { CoordsInterface } from './coords.interface';
+
+export interface ShipInterface {
+    id: string,
+    coords: CoordsInterface[],
+    type: string,
+    size: number,
+    direction?: number,
+    hits: number,
     isSunk: boolean
 }

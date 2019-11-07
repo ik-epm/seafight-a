@@ -1,8 +1,9 @@
-import { Cell } from './cell.interface';
-import { Ship } from './ship.interface';
-export interface Player {
-    id:number,
-    field:Array<Array<Cell>>,
-    ships:Array<Ship>,
-    username:string
+import { CellInterface } from './cell.interface';
+import { ShipInterface } from './ship.interface';
+
+export interface PlayerInterface {
+    id: string,
+    field: CellInterface[][],
+    ships: ShipInterface[],
+    username: string
 }

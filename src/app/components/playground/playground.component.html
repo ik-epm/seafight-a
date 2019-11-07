@@ -2,14 +2,12 @@
     <div class="field-container">
         <div class="battlefield player-battlefield"
             [ngClass]="{
-                winner: gameService.winner == gameService.player.username && gameService.winner != '',
+                winner: gameService.winner === gameService.player.username && gameService.winner !== '',
                 hover: !gameService.gameOver
-            }"
-        >
+            }">
             <app-battlefield
                 [isEnemyField]="false"
-                [field] = "gameService.player.field"
-            >
+                [field] = "gameService.player.field">
             </app-battlefield>
         </div>
     </div>
@@ -17,43 +15,49 @@
         <div class="battlefield comp-battlefield"
             [ngClass]="{
                 compBattlefieldRotate: gameService.gameOn,
-                winner: gameService.winner == 'computer',
+                winner: gameService.winner === 'computer',
                 hover: !gameService.gameOver
-            }"
-        >
+            }">
             <app-battlefield
                 [isEnemyField]="true"
-                [field] = "gameService.enemy.field"
-            >
+                [field] = "gameService.enemy.field">
             </app-battlefield>
         </div>
-        <div class="settingsfield hover" [ngClass]="{ settingsRotate: gameService.gameOn }" >
+        <div
+          class="settingsfield hover"
+          [ngClass]="{
+            settingsRotate: gameService.gameOn
+          }">
             <app-settingsfield></app-settingsfield>
         </div>
     </div>
     <div class="advice">
-        <div class="speech" *ngIf="advice">
-            <h4>
-                {{advice.title}}
-            </h4>
-            <p>
-                {{advice.paragraph}}
-            </p>
+        <div
+          class="speech"
+          *ngIf="advice">
+            <h4>{{advice.title}}</h4>
+            <p>{{advice.paragraph}}</p>
         </div>
     </div>
 </div>
-
 <div class="playground">
     <div class="field-container">
-        <div class="settingsfield hover" *ngIf="gameService.message?.length">
+        <div
+          class="settingsfield hover"
+          *ngIf="gameService.messages?.length">
             <div class= "message">
-                <div *ngFor="let message of gameService.message; let i = index">
+                <div
+                  *ngFor="let message of gameService.messages; let i = index">
                     {{message}}
                 </div>
             </div>
         </div>
     </div>
     <div class="field-container">
-        <button (click)="gameService.gameInit()" *ngIf="gameService.gameOn">New game</button>
+        <button
+          (click)="gameService.gameInit()"
+          *ngIf="gameService.gameOn">
+          New game
+        </button>
     </div>
 </div>

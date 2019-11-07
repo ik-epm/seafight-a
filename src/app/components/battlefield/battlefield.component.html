@@ -1,16 +1,21 @@
-<div class="battlefield-container">
-    <div [ngClass] = "{rows: true}" *ngFor="let row of field; let i = index">
+<div class="battlefield-container"
+    [ngClass] = "{
+        isEnemyShooter: (isEnemyField !== gameService.playerIsShooter) && gameService.gameOn && !gameService.gameOver
+    }">
+    <div
+      [ngClass] = "{ rows: true }"
+      *ngFor="let row of field; let i = index">
         <div
             [ngClass] = "{
-                isEnemyPointer: isEnemyField && gameService.playerIsShooter && !gameService.gameOver,
+                isPointer: (isEnemyField && gameService.playerIsShooter && !gameService.gameOver)
+                    || (!isEnemyField && !gameService.gameOn && shipsService.currentShip),
                 cell: true,
                 ship: field[i][j].isShip && !isEnemyField,
-                hit: field[i][j].cellStatus == 'hit',
-                miss: field[i][j].cellStatus == 'miss'
+                hit: field[i][j].cellStatus === 'hit',
+                miss: field[i][j].cellStatus === 'miss'
             }"
             *ngFor="let cell of field; let j = index"
-            (click) = "onCellClick(field[i][j])"
-        >
+            (click) = "onCellClick(field[i][j])">
         </div>
     </div>
 </div>
