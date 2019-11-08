@@ -2,8 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { AdvicesInterface } from '../interfaces/advices.interface';
-import { ConfigsInterface } from '../interfaces/configs.interface';
+import { AdvicesStateInterface } from '../store/state/advices.state';
+import { ConfigStateInterface } from '../store/state/config.state';
+import { GameDataInterface } from '../interfaces/gameData.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -15,11 +16,15 @@ export class HttpService {
     private http: HttpClient
   ) { }
 
-  getShipsData(): Observable<ConfigsInterface> {
+  getShipsData(): Observable<ConfigStateInterface> {
     return this.http.get('/assets/configs.json');
   }
 
-  getAdvicesData(): Observable<AdvicesInterface> {
+  getAdvicesData(): Observable<AdvicesStateInterface> {
     return this.http.get('/assets/advices.json');
+  }
+
+  getGameData(): Observable<GameDataInterface> {
+    return this.http.get('/assets/gameData.json');
   }
 }

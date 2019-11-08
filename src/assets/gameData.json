@@ -1,0 +1,14 @@
+{
+  "player1": {
+    "field": [],
+    "username": "",
+    "playerIsShooter": false
+  },
+  "player2": {
+    "field": [],
+    "username": ""
+  },
+  "gameOn": false,
+  "gameOver": false,
+  "winner": ""
+}

@@ -1,4 +1,4 @@
 export interface GameAdviceInterface {
-  title: string,
-  paragraph: string
+  title: string;
+  paragraph: string;
 }

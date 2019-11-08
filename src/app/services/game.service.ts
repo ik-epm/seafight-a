@@ -1,17 +1,23 @@
 import { Injectable } from '@angular/core';
-import { interval, Subscription } from 'rxjs';
+import {interval, Observable, Subscription} from 'rxjs';
+import { Store } from '@ngrx/store';
 
-import { Cell } from 'src/app/interfaces/cell.interface';
-import { Ship } from 'src/app/interfaces/ship.interface';
-import { ShipsData } from 'src/app/interfaces/shipsData.interface';
-import { Player } from 'src/app/interfaces/player.interface';
-import { AdvicesInterface } from 'src/app/interfaces/advices.interface';
+import { AppStateInterface } from '../store/state/app.state';
+import { GetAdvices } from '../store/actions/advices.actions';
+import { GetConfig } from '../store/actions/config.actions';
+
+import { CellInterface } from '../interfaces/cell.interface';
+import { ShipInterface } from '../interfaces/ship.interface';
+import { ShipsDataInterface } from '../interfaces/shipsData.interface';
+import { PlayerStateInterface } from '../store/state/player.state';
 import { CoordsInterface } from '../interfaces/coords.interface';
 
 import { BattlefieldService } from './battlefield.service';
 import { ShipsService } from './ships.service';
 import { HttpService } from './http.service';
 import { ToolsService } from './tools.service';
+import { ConfigStateInterface } from '../store/state/config.state';
+
 
 @Injectable({
   providedIn: 'root'
@@ -19,91 +25,85 @@ import { ToolsService } from './tools.service';
 
 export class GameService {
 
-  public playerIsShooter: boolean;
+  public playerIsShooter: boolean;                // статус игрока (игрок стреляет или противник)
   public winner: string;
-  public messages: string[];
-  public readyToPlay = false;
-  public gameOn = false;
-  public gameOver = false;
-  private enemyCoords: CoordsInterface[] = [];
-  public advices: AdvicesInterface = {
+  public messages: string[];                      // лог игры
+  public readyToPlay = false;                     // статус готовности (расставлены ли все корабли игрока или нет)
+  public gameOn = false;                          // статус игры (началась или нет)
+  public gameOver = false;                        // статус игры (закончилась или нет)
+  private enemyCoords: CoordsInterface[] = [];    // массив координат для обстрела игрока компьютером
+  /*public advices: AdvicesInterface = {
     preGameAdvices: [],
     gameAdvices: []
-  };
-  public player: Player = {
+  };*/
+  public player: PlayerStateInterface = {
     field: [],
     ships: [],
     username: '',
-    id: Number(new Date())
+    id: ''
   };
-  public enemy: Player = {
+  public enemy: PlayerStateInterface = {
     field: [],
     ships: [],
     username: 'computer',
-    id: 0
+    id: 'computer'
   };
 
   constructor(
     private httpService: HttpService,
     private battlefieldService: BattlefieldService,
     private shipsService: ShipsService,
-    private toolsService: ToolsService
+    private toolsService: ToolsService,
+    private store: Store<AppStateInterface>
   ) {
-    this.httpService.getShipsData().subscribe((data: {fieldSize: number, shipsData: ShipsData[] }) => {
-      const { fieldSize, shipsData } = data;
-      this.shipsService.fieldSize = fieldSize;
-      this.shipsService.shipsData = shipsData;
-      this.battlefieldService.fieldSize = fieldSize;
-      this.gameInit();
-    });
-    this.httpService.getAdvicesData().subscribe((data: AdvicesInterface) => {
-      this.advices = data;
-    });
+    // качаем настройки
+    this.store.dispatch(new GetConfig());
+    // качаем советы
+    this.store.dispatch(new GetAdvices());
   }
 
-  gameInit() {
+  gameInit(): void {
+    // обновляем настройки новой игры
     this.winner = '';
     this.messages = [];
     this.readyToPlay = false;
     this.gameOn = false;
     this.gameOver = false;
+    this.shipsService.playerShipsInit();
     this.player.ships = [];
     this.player.field = this.battlefieldService.getField(this.player.ships);
     this.enemy.ships = this.shipsService.generateShips();
     this.enemy.field = this.battlefieldService.getField(this.enemy.ships);
     this.playerIsShooter = Math.round(Math.random()) ? true : false;
 
-    this.setEnemyCoords();
+    // создаем массив изо всех координат поля для обстрела игрока компьютером
+    this.enemyCoords = this.setEnemyCoords();
   }
 
-  private setEnemyCoords(): void {
+  private setEnemyCoords(): CoordsInterface[] {
+    const coords: CoordsInterface[] = [];
     for (let i = 0; i < this.battlefieldService.fieldSize; i++) {
       for (let j = 0; j < this.battlefieldService.fieldSize; j++) {
-        this.enemyCoords.push({
-          coordX: i,
-          coordY: j
-        });
+        coords.push({coordX: i, coordY: j});
       }
     }
+    return coords;
   }
 
-  private setMissCellStatusAround(
-    coords: CoordsInterface,
-    target: string
-  ): void {
+  private setMissCellStatusAround(coords: CoordsInterface, target: string): void {
+    const { coordX, coordY } = coords;
     const changeCellStatus = (target, coordX, coordY) => {
       const isCell: boolean = this[target].field[coordX]
         && this[target].field[coordX][coordY];
 
       if (isCell) {
-        const cell: Cell = this[target].field[coordX][coordY];
+        const cell: CellInterface = this[target].field[coordX][coordY];
 
         if (!cell.isShip) { cell.cellStatus = 'miss'; }
       }
     };
-    const { coordX, coordY } = coords;
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i++) {   // 3 - количество ячеек вокруг исходной ячейки
       const countCoordY: number = coordY - 1 + i;
 
       changeCellStatus(target, coordX - 1, countCoordY);
@@ -128,38 +128,23 @@ export class GameService {
     this.messages.unshift('-');
 
     const enemyOnFire$: Subscription = interval(600).subscribe(() => {
-      // let whileCounter = 0;
-      // while (!this.playerIsShooter && whileCounter++ < 10 && this.enemyCoords.length) {
         const coordI: number = this.toolsService.getRandom(0, this.enemyCoords.length - 1);
         const coords: CoordsInterface = this.enemyCoords.splice(coordI, 1)[0];
         this.onFire(coords.coordX, coords.coordY, 'player', 'enemy');
-      // }
 
         if (this.playerIsShooter) {
-        enemyOnFire$.unsubscribe();
-        // console.log('unsubscribe');
-      }
+          enemyOnFire$.unsubscribe();
+        }
 
         if (!this.enemyCoords.length) {
-        enemyOnFire$.unsubscribe();
-        // console.log('unsubscribe');
-      }
-
-      // if (whileCounter > 10) {
-      //   this.message.unshift(`ошибочка вышла, твоя очередь стрелять`)
-      //   this.playerIsShooter = true
-      // }
+          enemyOnFire$.unsubscribe();
+        }
     });
   }
 
 
-  onFire(
-    coordX: number,
-    coordY: number,
-    target: string,
-    shooter: string
-  ): void {
-    const firedCell: Cell = this[target].field[coordX][coordY];
+  onFire(coordX: number, coordY: number, target: string, shooter: string): void {
+    const firedCell: CellInterface = this[target].field[coordX][coordY];
     const { cellStatus, isShip, idShip } = firedCell;
     let message: string;
 
@@ -167,7 +152,7 @@ export class GameService {
     if (!cellStatus && !this.gameOver) {
       if (isShip) {
         firedCell.cellStatus = 'hit';
-        const ship: Ship = this[target].ships.find((ship: Ship) => ship.id === idShip);
+        const ship: ShipInterface = this[target].ships.find((ship: ShipInterface) => ship.id === idShip);
         ship.hits++;
         const { hits, size, coords } = ship;
 
@@ -187,7 +172,7 @@ export class GameService {
     }
     // end if
 
-    if (this[target].ships.every((ship: Ship) => ship.isSunk) && !this.gameOver) {
+    if (this[target].ships.every((ship: ShipInterface) => ship.isSunk) && !this.gameOver) {
       this.winner = this[shooter].username;
       this.messages.unshift('** Game over **', '-', '-', this.winner + ' is winner', '-');
       this.gameOver = true;

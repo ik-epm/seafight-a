@@ -1,5 +1,9 @@
 import { Component } from '@angular/core';
-import { timer } from 'rxjs';
+import { timer, Subscription } from 'rxjs';
+import { Store, select } from '@ngrx/store';
+
+import { AppStateInterface } from '../../store/state/app.state';
+import { selectGameAdvices, selectPreGameAdvices } from '../../store/selectors/advices.selector';
 
 import { GameAdviceInterface } from 'src/app/interfaces/gameAdvice.interface';
 
@@ -21,34 +25,35 @@ export class PlaygroundComponent {
   private currentAdviceIndex = 0;
 
   constructor(
-    private gameService: GameService
+    private gameService: GameService,
+    private store: Store<AppStateInterface>
   ) { }
 
-  advice$ = timer(1e3, 15e3).subscribe(num => {
-    const { gameOn, gameOver, advices } = this.gameService;
-    // if (num % 2) {
-    const generateAdvice = (adviceType: string): void => {
-        const getIndex = (): number => Math.round(Math.random() * ((num % advices[adviceType].length) || 1));
-        let index: number = getIndex();
+  // таймер, который дает советы каждые 15 секунд, начиная со второй секунды
+  advice$: Subscription = timer(2e3, 15e3).subscribe(num => {
+    const { gameOn, gameOver } = this.gameService;
+    const generateAdvice = (advices: GameAdviceInterface[]): void => {
+      // генерируем рандомный номер подсказки
+      const getIndex = (): number => Math.round(Math.random() * ((num % advices.length) || 1));
+      let index: number = getIndex();
 
-        let whileCounter = 0;
-        while (index === this.currentAdviceIndex && whileCounter++ < 100) {
-          index = getIndex();
-        }
-
-        this.currentAdviceIndex = index;
-        this.advice = advices[adviceType][index];
-      };
-
-      if (gameOn && !gameOver) {
-        generateAdvice('gameAdvices');
-      } else if (gameOver) {
-        this.advice = null;
-      } else {
-        generateAdvice('preGameAdvices');
+      // условие для того, чтобы не показывать подряд одинаковые подсказки
+      let whileCounter = 0;
+      while (index === this.currentAdviceIndex && whileCounter++ < 100) {
+        index = getIndex();
       }
-    // } else {
-    //   this.advice = null
-    // }
+
+      this.currentAdviceIndex = index;
+      this.advice = advices[index];
+    };
+
+    if (gameOver) {
+      this.advice = null;
+    } else {
+      this.store.pipe(gameOn && !gameOver
+        ? select(selectGameAdvices)
+        : select(selectPreGameAdvices)
+      ).subscribe(advices => generateAdvice(advices));
+    }
   });
 }

@@ -18,13 +18,13 @@
     overflow: hidden;
 }
 
-.isEnemyPointer:hover {
+.isPointer:hover {
     cursor: pointer;
 }
 
-// .isEnemyShooter {
-//     opacity: 0.8;
-// }
+.isEnemyShooter {
+    opacity: 0.5;
+}
 
 .ship {
     background-color: #1976d2;

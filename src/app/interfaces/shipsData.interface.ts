@@ -1,5 +1,5 @@
-export interface ShipsData {
-    type: string,
-    number: number,
-    size: number
+export interface ShipsDataInterface {
+    type: string;
+    number: number;
+    size: number;
 }

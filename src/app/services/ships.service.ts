@@ -1,11 +1,16 @@
 import { Injectable } from '@angular/core';
+import { Store, select } from '@ngrx/store';
 
-import { Cell } from 'src/app/interfaces/cell.interface';
-import { Ship } from 'src/app/interfaces/ship.interface';
-import { ShipsData } from 'src/app/interfaces/shipsData.interface';
+import { CellInterface } from 'src/app/interfaces/cell.interface';
+import { ShipInterface } from 'src/app/interfaces/ship.interface';
+import { ShipsDataInterface } from 'src/app/interfaces/shipsData.interface';
 import { CoordsInterface } from 'src/app/interfaces/coords.interface';
 
 import { ToolsService } from './tools.service';
+
+import { AppStateInterface } from '../store/state/app.state';
+import { selectConfig } from '../store/selectors/config.selector';
+import { ConfigStateInterface } from '../store/state/config.state';
 
 
 @Injectable({
@@ -14,53 +19,139 @@ import { ToolsService } from './tools.service';
 
 export class ShipsService {
 
-  public shipsData: ShipsData[];
-  public fieldSize: number;
+  shipsData: ShipsDataInterface[];
+  fieldSize: number;
+  currentShip: ShipInterface = null;
+  allShips: any[][];
+  occupiedPlayerCells: boolean[][];
 
   constructor(
-    private toolsService: ToolsService
-  ) { }
+    private toolsService: ToolsService,
+    private store: Store<AppStateInterface>
+  ) {
+    this.store.pipe(select(selectConfig)).subscribe(config => {
+      const { fieldSize, shipsData } = config;
+      this.fieldSize = fieldSize;
+      this.shipsData = shipsData;
+    });
+    this.playerShipsInit();
+  }
 
-  generateShips(): Ship[] {
-    const occupiedCells = this.toolsService.createArray(
-      this.fieldSize,
-      null,
-      () => this.toolsService.createArray(this.fieldSize, false, null)
-    );
 
-    const occupingCells = (coords: CoordsInterface) => {
-      const checkOccupingCells = (coordX, coordY) => {
-        const isCell: boolean = occupiedCells[coordX] !== undefined;
-        if (isCell) occupiedCells[coordX][coordY] = true;
-      };
-      const { coordX, coordY } = coords;
+  playerShipsInit(): void {
+    this.allShips = [];
+    this.occupiedPlayerCells = new Array(this.fieldSize).fill(null).map(() => {
+      return new Array(this.fieldSize).fill(false);
+    });
+    if (this.shipsData) {
+      this.shipsData.forEach(shipsType => {
+        const ships: any[] = new Array(shipsType.number).fill(shipsType);
+        this.allShips.push(ships);
+      });
+    }
+  }
 
-      for (let i = 0; i < 3; i++) {
-        const countCoordY: number = coordY - 1 + i;
 
-        checkOccupingCells(coordX - 1, countCoordY);
-        checkOccupingCells(coordX, countCoordY);
-        checkOccupingCells(coordX + 1, countCoordY);
-      }
-    };
+  // ручная установка одного корабля
+  // аргументы: корабль, который нужно установить, начальная клетка и направление корабля
+  placeShip(currentShip: ShipInterface, cell: CellInterface, direction: number): ShipInterface {
+    const coords: Array<CellInterface> = [];
+    const directionX: number = direction;                  // 0 = horizontal, 1 = vertical
+    const directionY: number = directionX ? 0 : 1;         // 0 = vertical, 1 = horizontal
 
-    const isOccupied = (
-      coordX: number,
-      coordY: number,
-      directionX: number,
-      directionY: number,
-      size: number
-    ) => {
+    const occupiedCells = this.occupiedPlayerCells;
+    const size = currentShip.size;
+
+    const maxCoordX = this.fieldSize - 1 - (size - 1 ) * directionX;
+    const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
+
+    if ((cell.coordX <= maxCoordX) && (cell.coordY <= maxCoordY)
+      && !this.isOccupied(occupiedCells, size, cell.coordX, cell.coordY, directionX, directionY)) {
+
       for (let i = 0; i < size; i++) {
-        const countCoordX = coordX + (i * directionX);
-        const countCoordY = coordY + (i * directionY);
-        if (occupiedCells[countCoordX][countCoordY]) return true;
+        coords.push({coordX: cell.coordX + (i * directionX), coordY: cell.coordY + (i * directionY)});
+        this.occupyCells(occupiedCells, coords[i]);
       }
-      return false;
+
+      const ship: ShipInterface = {
+        id: currentShip.type + '-' + (cell.coordX) + ',' + (cell.coordY),
+        coords,
+        type: currentShip.type,
+        size,
+        direction: directionX,
+        hits: 0,
+        isSunk: false
+      };
+
+      let currentShipIndex: number;
+      this.allShips.forEach((typeShips, index) => {
+        for (let i = 0; i < typeShips.length; i++) {
+          if (this.currentShip && typeShips[i].type === this.currentShip.type) {
+            typeShips.splice(i, 1);
+            currentShipIndex = index;
+            break;
+          }
+        }
+      });
+
+      if (currentShipIndex && this.allShips[currentShipIndex].length) {
+        this.currentShip = this.allShips[currentShipIndex][0];
+      } else {
+        this.currentShip = null;
+      }
+
+      return ship;
+    }
+  }
+
+
+  private isOccupied(
+    field: boolean[][],
+    shipSize: number,
+    coordX: number,
+    coordY: number,
+    directionX: number,
+    directionY: number): boolean {
+
+    for (let i = 0; i < shipSize; i++) {
+      const countCoordX = coordX + (i * directionX);
+      const countCoordY = coordY + (i * directionY);
+      if (field[countCoordX][countCoordY]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  occupyCells(field: boolean[][], coords: CellInterface, occupingStatus: boolean = true): void {
+    const setOccupingStatus = (x: number, y: number) => {
+      const isCell: boolean = field[x] !== undefined;
+      if (isCell) {
+        field[x][y] = occupingStatus;
+      }
     };
+
+    const { coordX, coordY } = coords;
+
+    for (let i = 0; i < 3; i++) {   // 3 - количество ячеек вокруг исходной ячейки
+      const countCoordY: number = coordY - 1 + i;
+      setOccupingStatus(coordX - 1, countCoordY);
+      setOccupingStatus(coordX, countCoordY);
+      setOccupingStatus(coordX + 1, countCoordY);
+    }
+  }
+
+
+  generateShips(): ShipInterface[] {
+    const occupiedCells = new Array(this.fieldSize).fill(null).map(() => {
+      return new Array(this.fieldSize).fill(false);
+    });
+
     const oneTypeShips = (type: string, num: number, size: number) => {
-      const callback = (type, index) => {
-        const coords: Cell[] = [];
+      return new Array(num).fill(type).map((type, index) => {
+
+        const coords: CellInterface[] = [];
         let coordX: number;
         let coordY: number;
 
@@ -72,14 +163,14 @@ export class ShipsService {
           const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
           coordX = this.toolsService.getRandom(0, maxCoordX);
           coordY = this.toolsService.getRandom(0, maxCoordY);
-        } while (isOccupied(coordX, coordY, directionX, directionY, size));
+        } while (this.isOccupied (occupiedCells, size, coordX, coordY, directionX, directionY));
 
         for (let i = 0; i < size; i++) {
           coords.push({
             coordX: coordX + (i * directionX),
             coordY: coordY + (i * directionY)
           });
-          occupingCells(coords[i]);
+          this.occupyCells(occupiedCells, coords[i]);
         }
 
         return {
@@ -87,22 +178,31 @@ export class ShipsService {
           coords,
           type,
           size,
+          direction: directionX,
           hits: 0,
           isSunk: false
         };
-      };
+      });
 
-      return this.toolsService.createArray(num, type, callback);
     };
-    const ships: Ship[] = [];
 
-    Object.keys(this.shipsData).forEach((ship) => {
+    const ships: ShipInterface[] = [];
+
+    this.shipsData.forEach((ship, i) => {
       ships.push(...oneTypeShips(
-        this.shipsData[ship].type,
-        this.shipsData[ship].number,
-        this.shipsData[ship].size
+        this.shipsData[i].type,
+        this.shipsData[i].number,
+        this.shipsData[i].size
       ));
     });
+
+    // Object.keys(this.shipsData).forEach((ship) => {
+    //   ships.push(...oneTypeShips(
+    //     this.shipsData[ship].type,
+    //     this.shipsData[ship].number,
+    //     this.shipsData[ship].size
+    //   ));
+    // });
 
     return ships;
   }
