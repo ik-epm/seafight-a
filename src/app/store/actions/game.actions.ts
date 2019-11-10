@@ -4,19 +4,42 @@ import { GameStateInterface } from '../state/game.state';
 
 export enum EnumGameActions {
   GetGame = '[Game] Get Game',
-  GetGameSuccess = '[Game] Get Game Success'
+  SetGame = '[Game] Set Game',
+  AddGameMessages = '[Game] Set Game Messages'
 }
 
 export class GetGame implements Action {
   public readonly type = EnumGameActions.GetGame;
-}
-
-export class GetGameSuccess implements Action {
-  public readonly type = EnumGameActions.GetGameSuccess;
 
   constructor(
     public payload: GameStateInterface
   ) { }
 }
 
-export type GameActions = GetGame | GetGameSuccess;
+export class SetGame implements Action {
+  public readonly type = EnumGameActions.SetGame;
+
+  constructor(
+    public payload: {
+      gameOn?: boolean;
+      gameOver?: boolean;
+      playerIsShooter?: boolean;
+      readyToPlay?: boolean;
+      winner?: string;
+      mode?: string;
+      messages?: string[];
+    }
+  ) { }
+}
+
+export class AddGameMessages implements Action {
+  public readonly type = EnumGameActions.AddGameMessages;
+
+  constructor(
+    public payload: string[]
+  ) { }
+}
+
+export type GameActions = GetGame
+  | SetGame
+  | AddGameMessages;

@@ -7,17 +7,17 @@ import { ShipsDataInterface } from '../../interfaces/shipsData.interface';
 
 const configState = (state: AppStateInterface) => state.config;
 
-export const selectConfig = createSelector(
+export const selectConfigData = createSelector(
   configState,
-  (config: ConfigStateInterface) => config
+  (config: ConfigStateInterface): ConfigStateInterface => config
 );
 
 export const selectFieldSize = createSelector(
-  selectConfig,
+  configState,
   (config: ConfigStateInterface): number => config.fieldSize
 );
 
 export const selectShipsData = createSelector(
-  selectConfig,
+  configState,
   (config: ConfigStateInterface): ShipsDataInterface[] => config.shipsData
 );

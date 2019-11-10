@@ -1,7 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators} from '@angular/forms';
+import { Store, select } from '@ngrx/store';
 
 import { GameService } from 'src/app/services/game.service';
+
+import { AppStateInterface } from '../../store/state/app.state';
+
+import { SetPlayerName } from '../../store/actions/player.actions';
+import { SetGame } from '../../store/actions/game.actions';
+
+import { selectPlayerName } from '../../store/selectors/player.selector';
 
 @Component({
   selector: 'app-login',
@@ -17,30 +25,42 @@ export class LoginComponent implements OnInit {
   public myForm: FormGroup;
 
   constructor(
-    private gameService: GameService
+    private gameService: GameService,
+    private store: Store<AppStateInterface>
   ) { }
 
   login(): void {
 
     // если логин в форме отличается от текущего юзера, то подключаемся к новой игре
-    if (this.myForm.value.username !== this.gameService.player.username) {
+    const username = this.myForm.value.username;
+    const mode = this.myForm.controls.mode.value;
+    let isUsername: boolean;
+
+    this.store.pipe(select(selectPlayerName)).subscribe(playerName => isUsername = username !== playerName);
+
+    if (isUsername) {
 
       //  <- тут надо будет отсоединиться текущему юзеру (???)
 
-      const username = this.myForm.value.username;
       const id = username + Date.now();
 
-      this.gameService.player.username = username;
-      this.gameService.player.id = id;
-
-      console.log(this.gameService.player.id, localStorage);
+      this.store.dispatch(new SetPlayerName({
+        username,
+        id
+      }));
+      this.store.dispatch(new SetGame({
+        mode
+      }));
       localStorage.setItem('userID', id);
-      console.log(this.gameService.player.id, localStorage);
 
-      // открываем сокет
-      this.openSocket(id);
+      console.log('--- Log --- localStorage id player', localStorage);
 
-      // инициализируем новую игру
+      if (mode === 'computer') { // инициализируем новую игру
+        /*alert('Играем с ботом');*/
+      } else { // открываем сокет
+        alert('Играем онлайн');
+        this.openSocket(id);
+      }
       this.gameService.gameInit();
     }
   }
@@ -83,18 +103,20 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     // данные формы логина
-    this.myForm = new FormGroup({
-      username: new FormControl(
-        this.gameService.player.username,
-        [
-          Validators.required,
-          Validators.pattern('[a-zA-Z]+')
-        ]
-      ),
-      mode: new FormControl(
-        {value: 'computer', disabled: true},
-        [Validators.required]
-      )
+    this.store.pipe(select(selectPlayerName)).subscribe(playerName => {
+      this.myForm = new FormGroup({
+        username: new FormControl(
+          playerName,
+          [
+            Validators.required,
+            Validators.pattern('[a-zA-Z]+')
+          ]
+        ),
+        mode: new FormControl(
+          {value: 'computer', disabled: true},
+          [Validators.required]
+        )
+      });
     });
   }
 }

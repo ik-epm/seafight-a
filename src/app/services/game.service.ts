@@ -1,22 +1,33 @@
 import { Injectable } from '@angular/core';
-import {interval, Observable, Subscription} from 'rxjs';
-import { Store } from '@ngrx/store';
-
-import { AppStateInterface } from '../store/state/app.state';
-import { GetAdvices } from '../store/actions/advices.actions';
-import { GetConfig } from '../store/actions/config.actions';
+import { interval, Subscription } from 'rxjs';
+import { Store, select } from '@ngrx/store';
 
 import { CellInterface } from '../interfaces/cell.interface';
 import { ShipInterface } from '../interfaces/ship.interface';
-import { ShipsDataInterface } from '../interfaces/shipsData.interface';
-import { PlayerStateInterface } from '../store/state/player.state';
 import { CoordsInterface } from '../interfaces/coords.interface';
 
 import { BattlefieldService } from './battlefield.service';
 import { ShipsService } from './ships.service';
 import { HttpService } from './http.service';
 import { ToolsService } from './tools.service';
-import { ConfigStateInterface } from '../store/state/config.state';
+
+import { AppStateInterface } from '../store/state/app.state';
+import { PlayerStateInterface } from '../store/state/player.state';
+import { ComputerStateInterface } from '../store/state/computer.state';
+import { EnemyStateInterface } from '../store/state/enemy.state';
+import { GameStateInterface } from '../store/state/game.state';
+
+import { GetAdvices } from '../store/actions/advices.actions';
+import { GetConfig } from '../store/actions/config.actions';
+import { SetComputer } from '../store/actions/computer.actions';
+import { SetPlayer } from '../store/actions/player.actions';
+import { SetGame, AddGameMessages } from '../store/actions/game.actions';
+
+import { selectPlayerData } from '../store/selectors/player.selector';
+import { selectFieldSize } from '../store/selectors/config.selector';
+import { selectComputerData } from '../store/selectors/computer.selector';
+import { selectGameData } from '../store/selectors/game.selector';
+import { selectEnemyData } from '../store/selectors/enemy.selector';
 
 
 @Injectable({
@@ -24,19 +35,21 @@ import { ConfigStateInterface } from '../store/state/config.state';
 })
 
 export class GameService {
+  private gameState$: GameStateInterface;
+  private playerState$: PlayerStateInterface;
+  private computerState$: ComputerStateInterface;
+  private enemyState$: EnemyStateInterface;
+  private fieldSize$: number;
 
-  public playerIsShooter: boolean;                // статус игрока (игрок стреляет или противник)
-  public winner: string;
-  public messages: string[];                      // лог игры
-  public readyToPlay = false;                     // статус готовности (расставлены ли все корабли игрока или нет)
-  public gameOn = false;                          // статус игры (началась или нет)
-  public gameOver = false;                        // статус игры (закончилась или нет)
-  private enemyCoords: CoordsInterface[] = [];    // массив координат для обстрела игрока компьютером
-  /*public advices: AdvicesInterface = {
-    preGameAdvices: [],
-    gameAdvices: []
-  };*/
-  public player: PlayerStateInterface = {
+
+  // playerIsShooter - статус игрока (игрок стреляет или противник)
+  // winner - username победителя
+  // messages - лог игры
+  // readyToPlay - статус готовности (расставлены ли все корабли игрока или нет)
+  // gameOn - статус игры (началась или нет)
+  // gameOver - статус игры (закончилась или нет)
+  // enemyCoords - массив координат для обстрела игрока компьютером
+  /*public player: PlayerStateInterface = {
     field: [],
     ships: [],
     username: '',
@@ -47,7 +60,7 @@ export class GameService {
     ships: [],
     username: 'computer',
     id: 'computer'
-  };
+  };*/
 
   constructor(
     private httpService: HttpService,
@@ -56,35 +69,56 @@ export class GameService {
     private toolsService: ToolsService,
     private store: Store<AppStateInterface>
   ) {
+    this.store.pipe(select(selectGameData)).subscribe(gameState => this.gameState$ = gameState);
+    this.store.pipe(select(selectPlayerData)).subscribe(playerState => this.playerState$ = playerState);
+    this.store.pipe(select(selectComputerData)).subscribe(computerState => this.computerState$ = computerState);
+    this.store.pipe(select(selectEnemyData)).subscribe(enemyState => this.enemyState$ = enemyState);
     // качаем настройки
     this.store.dispatch(new GetConfig());
     // качаем советы
     this.store.dispatch(new GetAdvices());
+
+    this.store.pipe(select(selectFieldSize)).subscribe(fieldSize => this.fieldSize$ = fieldSize);
   }
 
   gameInit(): void {
-    // обновляем настройки новой игры
-    this.winner = '';
-    this.messages = [];
-    this.readyToPlay = false;
-    this.gameOn = false;
-    this.gameOver = false;
-    this.shipsService.playerShipsInit();
-    this.player.ships = [];
-    this.player.field = this.battlefieldService.getField(this.player.ships);
-    this.enemy.ships = this.shipsService.generateShips();
-    this.enemy.field = this.battlefieldService.getField(this.enemy.ships);
-    this.playerIsShooter = Math.round(Math.random()) ? true : false;
 
-    // создаем массив изо всех координат поля для обстрела игрока компьютером
-    this.enemyCoords = this.setEnemyCoords();
+    if (this.gameState$.mode === 'computer') {
+      const ships = this.shipsService.generateShips()
+      console.log('computer');
+      this.shipsService.playerShipsInit(); //
+
+      this.store.dispatch(new SetPlayer({
+        ships: [],
+        field: this.battlefieldService.getField([]) //
+      }));
+      this.store.dispatch(new SetComputer({
+        ships, //
+        field: this.battlefieldService.getField(ships), //
+        enemyCoords: this.setEnemyCoords() //
+      }));
+      this.store.dispatch(new SetGame({
+        winner: '',
+        messages: [],
+        readyToPlay: false,
+        gameOn: false,
+        gameOver: false,
+        playerIsShooter: Math.round(Math.random()) ? true : false
+      }));
+    } else {
+      console.log('enemy');
+    }
   }
 
   private setEnemyCoords(): CoordsInterface[] {
     const coords: CoordsInterface[] = [];
-    for (let i = 0; i < this.battlefieldService.fieldSize; i++) {
-      for (let j = 0; j < this.battlefieldService.fieldSize; j++) {
-        coords.push({coordX: i, coordY: j});
+
+    for (let i = 0; i < this.fieldSize$; i++) {
+      for (let j = 0; j < this.fieldSize$; j++) {
+        coords.push({
+          coordX: i,
+          coordY: j
+        });
       }
     }
     return coords;
@@ -93,11 +127,20 @@ export class GameService {
   private setMissCellStatusAround(coords: CoordsInterface, target: string): void {
     const { coordX, coordY } = coords;
     const changeCellStatus = (target, coordX, coordY) => {
-      const isCell: boolean = this[target].field[coordX]
-        && this[target].field[coordX][coordY];
+      const definitionData = (type) => {
+        if (this.gameState$.mode === 'computer' && type === 'enemy') {
+          return this.computerState$.field;
+        } else if (type === 'enemy') {
+          return this.enemyState$.field;
+        } else {
+          return this.playerState$.field;
+        }
+      };
+      const targetField = definitionData(target);
+      const isCell: boolean = targetField[coordX] !== undefined && targetField[coordX][coordY] !== undefined;
 
       if (isCell) {
-        const cell: CellInterface = this[target].field[coordX][coordY];
+        const cell: CellInterface = targetField[coordX][coordY];
 
         if (!cell.isShip) { cell.cellStatus = 'miss'; }
       }
@@ -115,67 +158,90 @@ export class GameService {
   game(): void {
     let shooter: string;
 
-    if (this.playerIsShooter) {
-      shooter = 'Player';
+    if (this.gameState$.playerIsShooter || this.gameState$.mode !== 'computer') {
+      shooter = this.gameState$.playerIsShooter
+        ? this.playerState$.username
+        : this.enemyState$.username;
     } else {
       shooter = 'Computer';
-      this.enemyOnFire();
     }
-    this.messages.unshift(`${shooter} shoots first`);
+    this.store.dispatch(new AddGameMessages([ `${shooter} shoots first` ]));
+    if (this.gameState$.mode === 'computer') this.enemyOnFire();
   }
 
   enemyOnFire(): void {
-    this.messages.unshift('-');
+    this.store.dispatch(new AddGameMessages([ '-' ]));
 
     const enemyOnFire$: Subscription = interval(600).subscribe(() => {
-        const coordI: number = this.toolsService.getRandom(0, this.enemyCoords.length - 1);
-        const coords: CoordsInterface = this.enemyCoords.splice(coordI, 1)[0];
-        this.onFire(coords.coordX, coords.coordY, 'player', 'enemy');
+      const enemyCoords: CoordsInterface[] = [ ...this.computerState$.enemyCoords ];
+      const coordI: number = this.toolsService.getRandom(0, enemyCoords.length - 1);
+      const coords: CoordsInterface = enemyCoords.splice(coordI, 1)[0];
+      this.store.dispatch(new SetComputer({
+        enemyCoords
+      }));
+      this.store.dispatch(new AddGameMessages([ '-' ]));
 
-        if (this.playerIsShooter) {
-          enemyOnFire$.unsubscribe();
-        }
+      this.onFire(coords.coordX, coords.coordY, 'player', 'enemy');
 
-        if (!this.enemyCoords.length) {
-          enemyOnFire$.unsubscribe();
-        }
+      if (this.gameState$.playerIsShooter) enemyOnFire$.unsubscribe();
+
+      if (!enemyCoords.length) {
+        enemyOnFire$.unsubscribe();
+      }
     });
   }
 
 
   onFire(coordX: number, coordY: number, target: string, shooter: string): void {
-    const firedCell: CellInterface = this[target].field[coordX][coordY];
+    const definitionData = (type) => {
+        if (this.gameState$.mode === 'computer' && type === 'enemy') {
+          return this.computerState$;
+        } else if (type === 'enemy') {
+          return this.enemyState$;
+        } else {
+          return this.playerState$;
+        }
+    };
+    const shooterData: ComputerStateInterface = definitionData(shooter);
+    const targetData: ComputerStateInterface = definitionData(target);
+    const firedCell: CellInterface = targetData.field[coordX][coordY];
     const { cellStatus, isShip, idShip } = firedCell;
     let message: string;
 
     // start if
-    if (!cellStatus && !this.gameOver) {
+    if (!cellStatus && !this.gameState$.gameOver) {
       if (isShip) {
         firedCell.cellStatus = 'hit';
-        const ship: ShipInterface = this[target].ships.find((ship: ShipInterface) => ship.id === idShip);
+        const ship: ShipInterface = targetData.ships.find((ship: ShipInterface) => ship.id === idShip);
         ship.hits++;
         const { hits, size, coords } = ship;
 
         if (hits === size) {
           ship.isSunk = true;
-          message = `${this[shooter].username} sank a ${this[target].username}'s ship on x: ${coordY + 1} y: ${coordX + 1}`;
+          message = `${shooterData.username} sank a ${targetData.username}'s ship on x: ${coordY + 1} y: ${coordX + 1}`;
+
           coords.forEach((coords: CoordsInterface) => this.setMissCellStatusAround(coords, target));
         } else {
-          message = `${this[shooter].username} shot ${this[target].username} on x: ${coordY + 1} y: ${coordX + 1}`;
+          message = `${shooterData.username} shot ${targetData.username} on x: ${coordY + 1} y: ${coordX + 1}`;
         }
       } else {
         firedCell.cellStatus = 'miss';
-        message = `${this[shooter].username} missed ${this[target].username} on x: ${coordY + 1} y: ${coordX + 1}`;
-        this.playerIsShooter = !this.playerIsShooter;
+        message = `${shooterData.username} missed ${targetData.username} on x: ${coordY + 1} y: ${coordX + 1}`;
+
+        this.store.dispatch(new SetGame({
+          playerIsShooter: !this.gameState$.playerIsShooter
+        }));
       }
-      this.messages.unshift(message);
+      this.store.dispatch(new AddGameMessages([ message ]));
     }
     // end if
 
-    if (this[target].ships.every((ship: ShipInterface) => ship.isSunk) && !this.gameOver) {
-      this.winner = this[shooter].username;
-      this.messages.unshift('** Game over **', '-', '-', this.winner + ' is winner', '-');
-      this.gameOver = true;
+    if (targetData.ships.every((ship: ShipInterface) => ship.isSunk) && !this.gameState$.gameOver) {
+      this.store.dispatch(new SetGame({
+        winner: shooterData.username,
+        gameOver: true
+      }));
+      this.store.dispatch(new AddGameMessages([ '** Game over **', '-', '-', this.gameState$.winner + ' is winner', '-' ]));
     }
   }
 }

@@ -5,10 +5,16 @@ export const computerReducers = (
   state = initialComputerState,
   action: ComputerActions
 ): ComputerStateInterface => {
-  const { GetComputerSuccess } = EnumComputerActions;
+  const { GetComputer, SetComputer } = EnumComputerActions;
   switch (action.type) {
-    case GetComputerSuccess: {
+    case GetComputer: {
       return action.payload;
+    }
+    case SetComputer: {
+      return {
+        ...state,
+        ...action.payload
+      };
     }
     default:
       return state;

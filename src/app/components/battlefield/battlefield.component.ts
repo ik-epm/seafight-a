@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { Store, select } from '@ngrx/store';
 
 import { CellInterface } from 'src/app/interfaces/cell.interface';
 import { ShipInterface } from 'src/app/interfaces/ship.interface';
@@ -7,6 +8,12 @@ import { GameService } from 'src/app/services/game.service';
 import { ShipsService } from 'src/app/services/ships.service';
 import { BattlefieldService } from 'src/app/services/battlefield.service';
 import { ToolsService } from 'src/app/services/tools.service';
+
+import { AppStateInterface } from '../../store/state/app.state';
+import { AddPlayerShip, SetPlayer } from '../../store/actions/player.actions';
+import { SetGame } from '../../store/actions/game.actions';
+import { selectGameData } from '../../store/selectors/game.selector';
+import { selectPlayerShips } from '../../store/selectors/player.selector';
 
 
 @Component({
@@ -23,23 +30,37 @@ export class BattlefieldComponent {
   @Input() isEnemyField: boolean;
   @Input() field: CellInterface[][];
 
+  public gameOn$: boolean;
+  public gameOver$: boolean;
+  public playerIsShooter$: boolean;
+  private playerShips$: ShipInterface[];
+
   constructor(
     private gameService: GameService,
     private shipsService: ShipsService,
     private battlefieldService: BattlefieldService,
-    private toolsService: ToolsService
-  ) { }
+    private toolsService: ToolsService,
+    private store: Store<AppStateInterface>
+  ) {
+    this.store.pipe(select(selectGameData)).subscribe(gameState => {
+      const { gameOn, gameOver, playerIsShooter  } = gameState;
+      this.gameOn$ = gameOn;
+      this.gameOver$ = gameOver;
+      this.playerIsShooter$ = playerIsShooter;
+    });
+    this.store.pipe(select(selectPlayerShips)).subscribe(playerShips => this.playerShips$ = playerShips);
+  }
 
   onCellClick(cell: CellInterface): void {
     const { coordX, coordY } = cell;
 
     // условие для выстрела по противнику
     // стреляем, если поле противника и игрок - стрелок
-    if (this.isEnemyField && this.gameService.playerIsShooter) {
+    if (this.isEnemyField && this.playerIsShooter$) {
       this.gameService.onFire(coordX, coordY, 'enemy', 'player');
 
       // если игрок промахнулся, то стреляет компьютер
-      if (!this.gameService.playerIsShooter) {
+      if (!this.playerIsShooter$) {
         this.gameService.enemyOnFire();
       }
     }
@@ -47,7 +68,7 @@ export class BattlefieldComponent {
     // условие для ручной установки корабля на поле
     // пробуем разместить корабль
     // если поле игрока,      игра еще не началась,       выбран какой-то корабль      и в текущей ячейке нет корабля
-    if (!this.isEnemyField && !this.gameService.gameOn && this.shipsService.currentShip && !cell.isShip) {
+    if (!this.isEnemyField && !this.gameOn$ && this.shipsService.currentShip && !cell.isShip) {
       const shipDirection: number = this.toolsService.getRandom(0, 1);
       const {currentShip, occupiedPlayerCells: occupiedCells, allShips} = this.shipsService;
 
@@ -66,24 +87,28 @@ export class BattlefieldComponent {
         });
 
         // добавляем корабль игроку
-        this.gameService.player.ships.push(ship);
+        this.store.dispatch(new AddPlayerShip(ship));
 
         // обновляем поле
-        this.gameService.player.field = this.battlefieldService.getField(this.gameService.player.ships);
+        this.store.dispatch(new SetPlayer({
+          field: this.battlefieldService.getField(this.playerShips$)
+        }));
 
         // если все корабли установлены, то готовы к игре
         if (allShips.every(ships => !ships.length)) {
-          this.gameService.readyToPlay = true;
+          this.store.dispatch(new SetGame({
+            readyToPlay: true
+          }));
         }
       }
     }
 
     // условие для смены направления корабля
     // если поле игрока,      игра еще не началась   и в текущей ячейке корабль
-    if (!this.isEnemyField && !this.gameService.gameOn && cell.isShip) {
+    if (!this.isEnemyField && !this.gameOn$ && cell.isShip) {
       // находим наш корабль среди кораблей игрока и вырезаем
-      const shipIndex: number = this.gameService.player.ships.findIndex((ship: ShipInterface) => ship.id === cell.idShip);
-      const ship: ShipInterface = this.gameService.player.ships.splice(shipIndex, 1)[0];
+      const shipIndex: number = this.playerShips$.findIndex((ship: ShipInterface) => ship.id === cell.idShip);
+      const ship: ShipInterface = this.playerShips$.splice(shipIndex, 1)[0];
 
       // меняем статус клеток корабля и вокруг на незанятые
       ship.coords.forEach((coords) => {
@@ -91,7 +116,7 @@ export class BattlefieldComponent {
       });
 
       // для остальных кораблей обновляем статус занятых клеток, если где-то было пересечение с предыдущим кораблем
-      this.gameService.player.ships.forEach(ship => {
+      this.playerShips$.forEach(ship => {
         ship.coords.forEach((coords) => {
           this.shipsService.occupyCells(this.shipsService.occupiedPlayerCells, coords);
         });
@@ -106,11 +131,13 @@ export class BattlefieldComponent {
 
       // если получилось, то обновляем корабли и поле, иначе - возвращаем корабль на место
       if (newShip) {
-        this.gameService.player.ships.push(newShip);
-        this.gameService.player.field = this.battlefieldService.getField(this.gameService.player.ships);
+        this.store.dispatch(new AddPlayerShip(newShip));
+        this.store.dispatch(new SetPlayer({
+          field: this.battlefieldService.getField(this.playerShips$)
+        }));
       } else {
         this.shipsService.placeShip(ship, ship.coords[0], ship.direction);
-        this.gameService.player.ships.push(ship);
+        this.store.dispatch(new AddPlayerShip(ship));
       }
     }
   }

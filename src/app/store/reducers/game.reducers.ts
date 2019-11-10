@@ -5,10 +5,23 @@ export const gameReducers = (
   state = initialGameState,
   action: GameActions
 ): GameStateInterface => {
-  const { GetGameSuccess } = EnumGameActions;
+  const { GetGame, SetGame, AddGameMessages } = EnumGameActions;
   switch (action.type) {
-    case GetGameSuccess: {
+    case GetGame: {
       return action.payload;
+    }
+    case SetGame: {
+      return {
+        ...state,
+        ...action.payload
+      };
+    }
+    case AddGameMessages: {
+      console.log('action.payload', action.payload);
+      return {
+        ...state,
+        messages: [ ...action.payload, ...state.messages]
+      };
     }
     default:
       return state;

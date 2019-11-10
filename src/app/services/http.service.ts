@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 
 import { AdvicesStateInterface } from '../store/state/advices.state';
 import { ConfigStateInterface } from '../store/state/config.state';
-import { GameDataInterface } from '../interfaces/gameData.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -22,9 +21,5 @@ export class HttpService {
 
   getAdvicesData(): Observable<AdvicesStateInterface> {
     return this.http.get('/assets/advices.json');
-  }
-
-  getGameData(): Observable<GameDataInterface> {
-    return this.http.get('/assets/gameData.json');
   }
 }

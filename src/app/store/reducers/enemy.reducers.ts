@@ -5,10 +5,16 @@ export const enemyReducers = (
   state = initialEnemyState,
   action: EnemyActions
 ): EnemyStateInterface => {
-  const { GetEnemySuccess } = EnumEnemyActions;
+  const { GetEnemy, SetEnemy } = EnumEnemyActions;
   switch (action.type) {
-    case GetEnemySuccess: {
+    case GetEnemy: {
       return action.payload;
+    }
+    case SetEnemy: {
+      return {
+        ...state,
+        ...action.payload
+      };
     }
     default:
       return state;

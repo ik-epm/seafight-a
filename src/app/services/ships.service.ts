@@ -9,8 +9,9 @@ import { CoordsInterface } from 'src/app/interfaces/coords.interface';
 import { ToolsService } from './tools.service';
 
 import { AppStateInterface } from '../store/state/app.state';
-import { selectConfig } from '../store/selectors/config.selector';
+import { selectConfigData } from '../store/selectors/config.selector';
 import { ConfigStateInterface } from '../store/state/config.state';
+import { selectPlayerShips } from '../store/selectors/player.selector';
 
 
 @Injectable({
@@ -19,20 +20,21 @@ import { ConfigStateInterface } from '../store/state/config.state';
 
 export class ShipsService {
 
-  shipsData: ShipsDataInterface[];
-  fieldSize: number;
-  currentShip: ShipInterface = null;
-  allShips: any[][];
-  occupiedPlayerCells: boolean[][];
+  private shipsData$: ShipsDataInterface[];
+  private fieldSize$: number;
+
+  public currentShip: ShipInterface = null;
+  public allShips: any[][];
+  public occupiedPlayerCells: boolean[][];
 
   constructor(
     private toolsService: ToolsService,
     private store: Store<AppStateInterface>
   ) {
-    this.store.pipe(select(selectConfig)).subscribe(config => {
+    this.store.pipe(select(selectConfigData)).subscribe(config => {
       const { fieldSize, shipsData } = config;
-      this.fieldSize = fieldSize;
-      this.shipsData = shipsData;
+      this.fieldSize$ = fieldSize;
+      this.shipsData$ = shipsData;
     });
     this.playerShipsInit();
   }
@@ -40,30 +42,38 @@ export class ShipsService {
 
   playerShipsInit(): void {
     this.allShips = [];
-    this.occupiedPlayerCells = new Array(this.fieldSize).fill(null).map(() => {
-      return new Array(this.fieldSize).fill(false);
+    this.occupiedPlayerCells = new Array(this.fieldSize$).fill(null).map(() => {
+      return new Array(this.fieldSize$).fill(false);
     });
-    if (this.shipsData) {
-      this.shipsData.forEach(shipsType => {
+    if (this.shipsData$) {
+      this.shipsData$.forEach(shipsType => {
         const ships: any[] = new Array(shipsType.number).fill(shipsType);
         this.allShips.push(ships);
       });
     }
+
+    console.log('this.fieldSize', this.fieldSize$);
+    console.log('this.shipsData', this.shipsData$);
+    console.log('this.allShips', this.allShips);
   }
 
 
   // ручная установка одного корабля
   // аргументы: корабль, который нужно установить, начальная клетка и направление корабля
-  placeShip(currentShip: ShipInterface, cell: CellInterface, direction: number): ShipInterface {
-    const coords: Array<CellInterface> = [];
+  placeShip(
+    currentShip: ShipInterface,
+    cell: CellInterface,
+    direction: number
+  ): ShipInterface {
+    const coords: CellInterface[] = [];
     const directionX: number = direction;                  // 0 = horizontal, 1 = vertical
     const directionY: number = directionX ? 0 : 1;         // 0 = vertical, 1 = horizontal
 
     const occupiedCells = this.occupiedPlayerCells;
     const size = currentShip.size;
 
-    const maxCoordX = this.fieldSize - 1 - (size - 1 ) * directionX;
-    const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
+    const maxCoordX = this.fieldSize$ - 1 - (size - 1 ) * directionX;
+    const maxCoordY = this.fieldSize$ - 1 - (size - 1 ) * directionY;
 
     if ((cell.coordX <= maxCoordX) && (cell.coordY <= maxCoordY)
       && !this.isOccupied(occupiedCells, size, cell.coordX, cell.coordY, directionX, directionY)) {
@@ -144,8 +154,8 @@ export class ShipsService {
 
 
   generateShips(): ShipInterface[] {
-    const occupiedCells = new Array(this.fieldSize).fill(null).map(() => {
-      return new Array(this.fieldSize).fill(false);
+    const occupiedCells = new Array(this.fieldSize$).fill(null).map(() => {
+      return new Array(this.fieldSize$).fill(false);
     });
 
     const oneTypeShips = (type: string, num: number, size: number) => {
@@ -159,8 +169,8 @@ export class ShipsService {
         const directionY: number = directionX ? 0 : 1;                      // 0 = vertical, 1 = horizontal
 
         do {
-          const maxCoordX = this.fieldSize - 1 - (size - 1 ) * directionX;
-          const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
+          const maxCoordX = this.fieldSize$ - 1 - (size - 1 ) * directionX;
+          const maxCoordY = this.fieldSize$ - 1 - (size - 1 ) * directionY;
           coordX = this.toolsService.getRandom(0, maxCoordX);
           coordY = this.toolsService.getRandom(0, maxCoordY);
         } while (this.isOccupied (occupiedCells, size, coordX, coordY, directionX, directionY));
@@ -188,21 +198,13 @@ export class ShipsService {
 
     const ships: ShipInterface[] = [];
 
-    this.shipsData.forEach((ship, i) => {
+    this.shipsData$.forEach((ship, i) => {
       ships.push(...oneTypeShips(
-        this.shipsData[i].type,
-        this.shipsData[i].number,
-        this.shipsData[i].size
+        this.shipsData$[i].type,
+        this.shipsData$[i].number,
+        this.shipsData$[i].size
       ));
     });
-
-    // Object.keys(this.shipsData).forEach((ship) => {
-    //   ships.push(...oneTypeShips(
-    //     this.shipsData[ship].type,
-    //     this.shipsData[ship].number,
-    //     this.shipsData[ship].size
-    //   ));
-    // });
 
     return ships;
   }

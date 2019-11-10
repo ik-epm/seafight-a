@@ -2,13 +2,13 @@
   <div class="ships-container">
     <!-- <p>Click on AUTO button to locate your ships</p> -->
     <app-ships
-      [shipsData] = "shipsService.shipsData">
+      [shipsData] = "shipsData$">
     </app-ships>
 
     <button
       class="button-manual"
       (click)="onManual()"
-      [disabled]="gameService.gameOn">
+      [disabled]="gameOn$">
       Manually place ships
     </button>
   </div>
@@ -17,15 +17,15 @@
     <button
       class="button button-auto"
       (click)="onAuto()"
-      [disabled]="gameService.gameOn">
+      [disabled]="gameOn$">
       Auto
     </button>
 
     <button
-      *ngIf="gameService.readyToPlay"
+      *ngIf="readyToPlay$"
       class="button button-play"
       (click)="onPlay()"
-      [disabled]="gameService.gameOn">
+      [disabled]="gameOn$">
         <span class="button-line-top"></span>
         <span class="button-line-right"></span>
         <span class="button-line-left"></span>

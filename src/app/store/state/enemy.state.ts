@@ -6,5 +6,6 @@ export interface EnemyStateInterface {
 }
 
 export const initialEnemyState = {
-  field: []
+  field: [],
+  username: ''
 };

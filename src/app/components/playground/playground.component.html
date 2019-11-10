@@ -2,31 +2,31 @@
     <div class="field-container">
         <div class="battlefield player-battlefield"
             [ngClass]="{
-                winner: gameService.winner === gameService.player.username && gameService.winner !== '',
-                hover: !gameService.gameOver
+                winner: winner$ === playerName$ && winner$ !== '',
+                hover: !gameOver$
             }">
             <app-battlefield
                 [isEnemyField]="false"
-                [field] = "gameService.player.field">
+                [field] = "playerField$">
             </app-battlefield>
         </div>
     </div>
     <div class="field-container">
         <div class="battlefield comp-battlefield"
             [ngClass]="{
-                compBattlefieldRotate: gameService.gameOn,
-                winner: gameService.winner === 'computer',
-                hover: !gameService.gameOver
+                compBattlefieldRotate: gameOn$,
+                winner: winner$ === 'computer',
+                hover: !gameOver$
             }">
             <app-battlefield
                 [isEnemyField]="true"
-                [field] = "gameService.enemy.field">
+                [field] = "mode$ === 'computer' ? computerField$ : enemyField$">
             </app-battlefield>
         </div>
         <div
           class="settingsfield hover"
           [ngClass]="{
-            settingsRotate: gameService.gameOn
+            settingsRotate: gameOn$
           }">
             <app-settingsfield></app-settingsfield>
         </div>
@@ -44,10 +44,10 @@
     <div class="field-container">
         <div
           class="settingsfield hover"
-          *ngIf="gameService.messages?.length">
+          *ngIf="messages$?.length">
             <div class= "message">
                 <div
-                  *ngFor="let message of gameService.messages; let i = index">
+                  *ngFor="let message of messages$; let i = index">
                     {{message}}
                 </div>
             </div>
@@ -56,7 +56,7 @@
     <div class="field-container">
         <button
           (click)="gameService.gameInit()"
-          *ngIf="gameService.gameOn">
+          *ngIf="gameOn$">
           New game
         </button>
     </div>
