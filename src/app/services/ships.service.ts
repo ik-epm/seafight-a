@@ -23,7 +23,7 @@ export class ShipsService {
   constructor(
     private toolsService: ToolsService
   ) {
-    this.playerShipsInit();
+    // this.playerShipsInit();
   }
 
 

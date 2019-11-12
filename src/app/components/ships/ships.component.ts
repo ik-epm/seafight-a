@@ -1,5 +1,5 @@
 import { Component, Input, OnChanges } from '@angular/core';
-import {CdkDragDrop, moveItemInArray, transferArrayItem} from '@angular/cdk/drag-drop';
+// import {CdkDragDrop, moveItemInArray, transferArrayItem} from '@angular/cdk/drag-drop';
 
 import { ShipsService } from 'src/app/services/ships.service';
 import { ShipInterface } from 'src/app/interfaces/ship.interface';
@@ -26,8 +26,8 @@ export class ShipsComponent implements OnChanges {
     this.shipsService.currentShip = ship;
   }
 
-  drop(event: CdkDragDrop<string[]>) {
-    console.log(event);
+  // drop(event: CdkDragDrop<string[]>) {
+  //   console.log(event);
     // if (event.previousContainer === event.container) {
     //   moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     // } else {
@@ -36,5 +36,5 @@ export class ShipsComponent implements OnChanges {
     //                     event.previousIndex,
     //                     event.currentIndex);
     // }
-  }
+  // }
 }

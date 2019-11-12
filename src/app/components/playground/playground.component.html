@@ -15,7 +15,7 @@
         <div class="battlefield comp-battlefield"
             [ngClass]="{
                 compBattlefieldRotate: gameService.gameOn,
-                winner: gameService.winner === 'computer',
+                winner: gameService.winner === gameService.enemy.username && gameService.winner !== '',
                 hover: !gameService.gameOver
             }">
             <app-battlefield
@@ -55,7 +55,7 @@
     </div>
     <div class="field-container">
         <button
-          (click)="gameService.gameInit()"
+          (click)="gameService.gameInit(gameService.gameSettings)"
           *ngIf="gameService.gameOn">
           New game
         </button>

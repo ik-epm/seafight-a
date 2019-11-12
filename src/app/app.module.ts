@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
-import { DragDropModule } from '@angular/cdk/drag-drop';
+// import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { AppComponent } from './app.component';
 import { PlaygroundComponent } from './components/playground/playground.component';
@@ -37,7 +37,7 @@ const appRoutes: Routes = [
   imports: [
     FormsModule,
     ReactiveFormsModule,
-    DragDropModule,
+    // DragDropModule,
     BrowserModule,
     HttpClientModule,
     RouterModule.forRoot(appRoutes)

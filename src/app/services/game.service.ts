@@ -14,6 +14,18 @@ import { HttpService } from './http.service';
 import { ToolsService } from './tools.service';
 
 
+export interface GameSettingsInterface {
+  winner: string;
+  messages: string[];
+  // readyToPlay: boolean;
+  gameOn: boolean;
+  gameOver: boolean;
+  playerShips: ShipInterface[];
+  // enemyShips: ShipInterface[];
+  mode: 'online' | 'computer';
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -27,6 +39,16 @@ export class GameService {
   public gameOn = false;                          // статус игры (началась или нет)
   public gameOver = false;                        // статус игры (закончилась или нет)
   private enemyCoords: CoordsInterface[] = [];    // массив координат для обстрела игрока компьютером
+
+  public gameSettings: GameSettingsInterface = {
+    playerShips: [],
+    gameOn: false,
+    gameOver: false,
+    messages: [],
+    mode: 'computer',
+    winner: '',
+  };
+
   public advices: AdvicesInterface = {
     preGameAdvices: [],
     gameAdvices: []
@@ -56,38 +78,67 @@ export class GameService {
       this.shipsService.fieldSize = fieldSize;
       this.shipsService.shipsData = shipsData;
       this.battlefieldService.fieldSize = fieldSize;
-      this.gameInit();
+
+
+
+      this.gameInit(this.gameSettings);
     });
     // качаем советы
     this.httpService.getAdvicesData().subscribe((data: AdvicesInterface) => {
       this.advices = data;
     });
+
+    // (???)
+    // инжектим сервис для связи с сервером
+    // читаем юзера из локалсторэджа, если есть, то записываем его в локальные данные на клиенте и
+    // связываемся с сервером, отправляем ему текущего юзверя
+    // получаем от сервера либо данные для игры, если у этого юзера есть какая-то незавершенная игра
+    // и записываем их в локальные данные на клиенте
+    // либо инициализируем новую игру, если юзер на сервере есть, но открытых игр у него нет
+    // (???)
+
+    console.log(this.player.id, localStorage);
+    const id = localStorage.getItem('userID');
+    console.log(id);
+
+    if (id) {
+      this.player.username = localStorage.getItem('username');
+      // this.gameInit();
+    }
+    console.log(this.player.id, localStorage);
+    // localStorage.clear();
+    // console.log('clear localStorage', this.player.id, localStorage);
+
   }
 
-  gameInit(): void {
+  gameInit(settings: GameSettingsInterface): void {
     // обновляем настройки новой игры
-    this.winner = '';
-    this.messages = [];
-    this.readyToPlay = false;
-    this.gameOn = false;
-    this.gameOver = false;
-    this.shipsService.playerShipsInit();
-    this.player.ships = [];
-    this.player.field = this.battlefieldService.getField(this.player.ships);
+    this.winner = settings.winner;
+    this.messages = settings.messages;
+    this.gameOn = settings.gameOn;
+    this.gameOver = settings.gameOver;
+    this.player.ships = settings.playerShips;
     this.enemy.ships = this.shipsService.generateShips();
+
+    this.readyToPlay = false;
+    this.player.field = this.battlefieldService.getField(this.player.ships);
     this.enemy.field = this.battlefieldService.getField(this.enemy.ships);
     this.playerIsShooter = Math.round(Math.random()) ? true : false;
 
     // создаем массив изо всех координат поля для обстрела игрока компьютером
-    this.setEnemyCoords();
+    this.enemyCoords = this.setEnemyCoords();
+    // инициализируем корабли игрока для ручной расстановки
+    // this.shipsService.playerShipsInit();
   }
 
-  private setEnemyCoords(): void {
-    for (let i = 0; i < this.battlefieldService.fieldSize; i++) {
-      for (let j = 0; j < this.battlefieldService.fieldSize; j++) {
-        this.enemyCoords.push({coordX: i, coordY: j});
+  private setEnemyCoords(): CoordsInterface[] {
+    const coords: CoordsInterface[] = [];
+    for (let coordX = 0; coordX < this.battlefieldService.fieldSize; coordX++) {
+      for (let coordY = 0; coordY < this.battlefieldService.fieldSize; coordY++) {
+        coords.push({coordX, coordY});
       }
     }
+    return coords;
   }
 
   private setMissCellStatusAround(coords: CoordsInterface, target: string): void {
@@ -103,9 +154,17 @@ export class GameService {
       }
     };
 
-    for (let i = 0; i < 3; i++) {   // 3 - количество ячеек вокруг исходной ячейки
-      const countCoordY: number = coordY - 1 + i;
+    // const cellsCount = 3;             // 3 - количество ячеек вокруг исходной ячейки
+    // for (let i = 0; i < cellsCount; i++) {
+    //   const y: number = coordY - 1 + i;
+    //   for (let j = 0; j < cellsCount; j++) {
+    //     const x: number = coordX - 1 + j;
+    //     changeCellStatus(target, x, y);
+    //   }
+    // }
 
+    for (let i = 0; i < 3; i++) {        // 3 - количество ячеек вокруг исходной ячейки
+      const countCoordY: number = coordY - 1 + i;
       changeCellStatus(target, coordX - 1, countCoordY);
       changeCellStatus(target, coordX, countCoordY);
       changeCellStatus(target, coordX + 1, countCoordY);
