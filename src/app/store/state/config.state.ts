@@ -5,4 +5,7 @@ export interface ConfigStateInterface {
   shipsData?: ShipsDataInterface[];
 }
 
-export const initialConfigState = {};
+export const initialConfigState = {
+  fieldSize: 0,
+  shipsData: []
+};

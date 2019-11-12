@@ -4,7 +4,7 @@ export interface GameStateInterface {
   playerIsShooter: boolean;
   readyToPlay: boolean;
   winner: string;
-  mode: string;
+  mode?: string;
   messages: string[];
 }
 

@@ -4,7 +4,6 @@ import { Store, select } from '@ngrx/store';
 import { CellInterface } from 'src/app/interfaces/cell.interface';
 import { ShipInterface } from 'src/app/interfaces/ship.interface';
 import { CoordsInterface } from '../interfaces/coords.interface';
-import { ToolsService } from './tools.service';
 
 import { AppStateInterface } from '../store/state/app.state';
 import { selectFieldSize } from '../store/selectors/config.selector';
@@ -39,6 +38,7 @@ export class BattlefieldService {
       }
       field.push(rows);
     }
+
     if (ships.length > 0) {
       ships.forEach((ship: ShipInterface) => {
         const { id, coords } = ship;

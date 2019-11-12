@@ -1,33 +1,34 @@
-import { Component, Input, OnChanges } from '@angular/core';
-import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { Component, Input } from '@angular/core';
+// import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+
+import { ShipInterface } from 'src/app/interfaces/ship.interface';
+import { ShipsDataInterface } from '../../interfaces/shipsData.interface';
 
 import { ShipsService } from 'src/app/services/ships.service';
-import { ShipInterface } from 'src/app/interfaces/ship.interface';
 
 @Component({
   selector: 'app-ships',
   templateUrl: './ships.component.html',
   styleUrls: ['./ships.component.scss']
 })
-export class ShipsComponent implements OnChanges {
+
+export class ShipsComponent {
+  //  ---  Добавить в редакс shipsService.currentShip и shipsService.allShips, используются в верстке
+
+  @Input() shipsData: ShipsDataInterface;
 
   constructor(
     private shipsService: ShipsService
   ) { }
 
-  @Input() shipsData;
-
-
-  ngOnChanges() {
-    this.shipsService.playerShipsInit();
-  }
-
   selectShip(ship: ShipInterface): void {
+    //  ---  Доработать под редакс
     this.shipsService.currentShip = ship;
   }
 
-  drop(event: CdkDragDrop<string[]>) {
-    console.log(event);
+  // Закоменчена по причине не надобности на данном этапе
+  /*drop(event: CdkDragDrop<string[]>) {
+    console.log('eventDragDrop', event);
     // if (event.previousContainer === event.container) {
     //   moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     // } else {
@@ -36,5 +37,11 @@ export class ShipsComponent implements OnChanges {
     //                     event.previousIndex,
     //                     event.currentIndex);
     // }
-  }
+  }*/
+
+  // Эта штука дополнительно обновляла расстанавливающие корабли при переходе на экран Game
+  // Обновление и так происходит вызовом функции в компоненте Playground
+  /*ngOnChanges() {
+    this.shipsService.playerShipsInit();
+  }*/
 }

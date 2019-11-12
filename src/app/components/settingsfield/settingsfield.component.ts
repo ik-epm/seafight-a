@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Store, select } from '@ngrx/store';
+import { ReplaySubject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-import { ShipInterface } from 'src/app/interfaces/ship.interface';
 import { ShipsDataInterface } from '../../interfaces/shipsData.interface';
 
 import { ShipsService } from 'src/app/services/ships.service';
@@ -9,8 +10,10 @@ import { GameService } from 'src/app/services/game.service';
 import { BattlefieldService } from 'src/app/services/battlefield.service';
 
 import { AppStateInterface } from '../../store/state/app.state';
+
 import { SetPlayer } from '../../store/actions/player.actions';
 import { SetGame } from '../../store/actions/game.actions';
+
 import { selectConfigData } from '../../store/selectors/config.selector';
 import { selectGameData } from '../../store/selectors/game.selector';
 
@@ -22,43 +25,37 @@ import { selectGameData } from '../../store/selectors/game.selector';
     './buttons.animation.scss'
   ]
 })
-export class SettingsfieldComponent {
+export class SettingsfieldComponent implements OnInit, OnDestroy {
 
-  public shipsData$: ShipsDataInterface[];
-  public gameOn$: boolean;
-  public readyToPlay$: boolean;
-  private fieldSize$: number;
+  public shipsData: ShipsDataInterface[];
+  public gameOn: boolean;
+  public readyToPlay: boolean;
+  private fieldSize: number;
+  private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
 
   constructor(
     private shipsService: ShipsService,
     private battlefieldService: BattlefieldService,
     private gameService: GameService,
     private store: Store<AppStateInterface>
-  ) {
-    this.store.pipe(select(selectGameData)).subscribe(gameState => {
-      const { gameOn, readyToPlay } = gameState;
-      this.gameOn$ = gameOn;
-      this.readyToPlay$ = readyToPlay;
-    });
-    this.store.pipe(select(selectConfigData)).subscribe(configState => {
-      const { fieldSize, shipsData } = configState;
-      this.shipsData$ = shipsData;
-      this.fieldSize$ = fieldSize;
-    });
-  }
+  ) { }
 
   onAuto(): void {
-    // убираем все корабли для ручной расстановки и сбрасываем статус клеток на поле игрока
-    this.shipsService.allShips = new Array(this.shipsData$.length).fill([]);
-    this.shipsService.occupiedPlayerCells = new Array(this.fieldSize$).fill(null).map(() => {
-      return new Array(this.fieldSize$).fill(false);
-    });
-
     // генерируем автоматически корабли
     const ships = this.shipsService.generateShips();
+    // убираем все корабли для ручной расстановки и сбрасываем статус клеток на поле игрока
+
+    //  ---  Доработать под редакс
+
+    this.shipsService.allShips = new Array(this.shipsData.length).fill([]);
+    this.shipsService.occupiedPlayerCells = new Array(this.fieldSize).fill(null).map(() => {
+      return new Array(this.fieldSize).fill(false);
+    });
+
+    // добавляем сгенерируемые корабли
     this.store.dispatch(new SetPlayer({
-      ships,
-      field: this.battlefieldService.getField(ships)
+        ships,
+        field: this.battlefieldService.getField(ships)
     }));
 
     // все корабли поставлены - готовы к игре
@@ -77,8 +74,9 @@ export class SettingsfieldComponent {
 
   onManual(): void {
     // возвращаем все корабли в сток для их ручной расстановки
-    this.shipsService.playerShipsInit();
     const ships = [];
+
+    this.shipsService.playerShipsInit();
     this.store.dispatch(new SetPlayer({
       ships,
       field: this.battlefieldService.getField(ships)
@@ -86,5 +84,22 @@ export class SettingsfieldComponent {
     this.store.dispatch(new SetGame({
       readyToPlay: false
     }));
+  }
+
+  ngOnInit(): void {
+    this.store.pipe(select(selectGameData), takeUntil(this.destroy)).subscribe(gameState => {
+      this.readyToPlay = gameState.readyToPlay;
+      this.gameOn = gameState.gameOn;
+    });
+    this.store.pipe(select(selectConfigData), takeUntil(this.destroy)).subscribe(configState => {
+      const { fieldSize, shipsData } = configState;
+      this.shipsData = shipsData;
+      this.fieldSize = fieldSize;
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy.next(null);
+    this.destroy.complete();
   }
 }

@@ -25,8 +25,10 @@ export const appReducers: ActionReducerMap<AppStateInterface, any> = {
 export function logger(reducer: ActionReducer<AppStateInterface>):
   ActionReducer<AppStateInterface> {
   return (state: AppStateInterface, action: any): AppStateInterface => {
-    console.log('state', state);
-    /*console.log('action', action);*/
+    /*console.log(' -- log - start --');
+    /!*console.log('state', state);*!/
+    console.log('action', action.payload);
+    console.log(' -- log - end --');*/
     return reducer(state, action);
   };
 }

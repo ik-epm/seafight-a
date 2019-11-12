@@ -24,3 +24,13 @@ export const selectGameOver = createSelector(
   gameState,
   (gameData: GameStateInterface): boolean => gameData.gameOver
 );
+
+export const selectGameOn = createSelector(
+  gameState,
+  (gameData: GameStateInterface): boolean => gameData.gameOn
+);
+
+export const selectGameReadyToPlay = createSelector(
+  gameState,
+  (gameData: GameStateInterface): boolean => gameData.readyToPlay
+);

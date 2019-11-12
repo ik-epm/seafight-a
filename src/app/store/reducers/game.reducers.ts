@@ -17,7 +17,6 @@ export const gameReducers = (
       };
     }
     case AddGameMessages: {
-      console.log('action.payload', action.payload);
       return {
         ...state,
         messages: [ ...action.payload, ...state.messages]

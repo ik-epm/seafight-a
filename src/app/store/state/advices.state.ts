@@ -5,4 +5,7 @@ export interface AdvicesStateInterface {
   gameAdvices?: GameAdviceInterface[];
 }
 
-export const initialAdvicesState = {};
+export const initialAdvicesState = {
+  preGameAdvices: [],
+  gameAdvices: []
+};

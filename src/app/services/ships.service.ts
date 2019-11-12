@@ -4,14 +4,12 @@ import { Store, select } from '@ngrx/store';
 import { CellInterface } from 'src/app/interfaces/cell.interface';
 import { ShipInterface } from 'src/app/interfaces/ship.interface';
 import { ShipsDataInterface } from 'src/app/interfaces/shipsData.interface';
-import { CoordsInterface } from 'src/app/interfaces/coords.interface';
 
 import { ToolsService } from './tools.service';
 
 import { AppStateInterface } from '../store/state/app.state';
+
 import { selectConfigData } from '../store/selectors/config.selector';
-import { ConfigStateInterface } from '../store/state/config.state';
-import { selectPlayerShips } from '../store/selectors/player.selector';
 
 
 @Injectable({
@@ -20,8 +18,8 @@ import { selectPlayerShips } from '../store/selectors/player.selector';
 
 export class ShipsService {
 
-  private shipsData$: ShipsDataInterface[];
-  private fieldSize$: number;
+  private shipsData: ShipsDataInterface[];
+  private fieldSize: number;
 
   public currentShip: ShipInterface = null;
   public allShips: any[][];
@@ -33,28 +31,23 @@ export class ShipsService {
   ) {
     this.store.pipe(select(selectConfigData)).subscribe(config => {
       const { fieldSize, shipsData } = config;
-      this.fieldSize$ = fieldSize;
-      this.shipsData$ = shipsData;
+      this.fieldSize = fieldSize;
+      this.shipsData = shipsData;
     });
-    this.playerShipsInit();
   }
 
 
   playerShipsInit(): void {
     this.allShips = [];
-    this.occupiedPlayerCells = new Array(this.fieldSize$).fill(null).map(() => {
-      return new Array(this.fieldSize$).fill(false);
+    this.occupiedPlayerCells = new Array(this.fieldSize).fill(null).map(() => {
+      return new Array(this.fieldSize).fill(false);
     });
-    if (this.shipsData$) {
-      this.shipsData$.forEach(shipsType => {
+    if (this.shipsData) {
+      this.shipsData.forEach(shipsType => {
         const ships: any[] = new Array(shipsType.number).fill(shipsType);
         this.allShips.push(ships);
       });
     }
-
-    console.log('this.fieldSize', this.fieldSize$);
-    console.log('this.shipsData', this.shipsData$);
-    console.log('this.allShips', this.allShips);
   }
 
 
@@ -72,8 +65,8 @@ export class ShipsService {
     const occupiedCells = this.occupiedPlayerCells;
     const size = currentShip.size;
 
-    const maxCoordX = this.fieldSize$ - 1 - (size - 1 ) * directionX;
-    const maxCoordY = this.fieldSize$ - 1 - (size - 1 ) * directionY;
+    const maxCoordX = this.fieldSize - 1 - (size - 1 ) * directionX;
+    const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
 
     if ((cell.coordX <= maxCoordX) && (cell.coordY <= maxCoordY)
       && !this.isOccupied(occupiedCells, size, cell.coordX, cell.coordY, directionX, directionY)) {
@@ -154,8 +147,8 @@ export class ShipsService {
 
 
   generateShips(): ShipInterface[] {
-    const occupiedCells = new Array(this.fieldSize$).fill(null).map(() => {
-      return new Array(this.fieldSize$).fill(false);
+    const occupiedCells = new Array(this.fieldSize).fill(null).map(() => {
+      return new Array(this.fieldSize).fill(false);
     });
 
     const oneTypeShips = (type: string, num: number, size: number) => {
@@ -169,8 +162,8 @@ export class ShipsService {
         const directionY: number = directionX ? 0 : 1;                      // 0 = vertical, 1 = horizontal
 
         do {
-          const maxCoordX = this.fieldSize$ - 1 - (size - 1 ) * directionX;
-          const maxCoordY = this.fieldSize$ - 1 - (size - 1 ) * directionY;
+          const maxCoordX = this.fieldSize - 1 - (size - 1 ) * directionX;
+          const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
           coordX = this.toolsService.getRandom(0, maxCoordX);
           coordY = this.toolsService.getRandom(0, maxCoordY);
         } while (this.isOccupied (occupiedCells, size, coordX, coordY, directionX, directionY));
@@ -198,11 +191,11 @@ export class ShipsService {
 
     const ships: ShipInterface[] = [];
 
-    this.shipsData$.forEach((ship, i) => {
+    this.shipsData.forEach((ship, i) => {
       ships.push(...oneTypeShips(
-        this.shipsData$[i].type,
-        this.shipsData$[i].number,
-        this.shipsData$[i].size
+        this.shipsData[i].type,
+        this.shipsData[i].number,
+        this.shipsData[i].size
       ));
     });
 
