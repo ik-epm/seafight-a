@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
 // import { DragDropModule } from '@angular/cdk/drag-drop';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+// import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { StoreModule } from '@ngrx/store';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreRouterConnectingModule } from '@ngrx/router-store';
@@ -48,7 +48,7 @@ const appRoutes: Routes = [
     FormsModule,
     ReactiveFormsModule,
     // DragDropModule,
-    BrowserAnimationsModule,
+    // BrowserAnimationsModule,
     BrowserModule,
     HttpClientModule,
     RouterModule.forRoot(appRoutes),

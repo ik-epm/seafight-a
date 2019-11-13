@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ReplaySubject, Subscription, timer } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { takeUntil } from 'rxjs/operators';
-import { trigger, state, style, animate, transition, keyframes } from '@angular/animations';
+// import { trigger, state, style, animate, transition, keyframes } from '@angular/animations';
 
 import { GameAdviceInterface } from 'src/app/interfaces/gameAdvice.interface';
 import { CellInterface } from '../../interfaces/cell.interface';
@@ -20,30 +20,7 @@ import { AppStateInterface } from '../../store/state/app.state';
     './playground.component.scss',
     './playground.animation.scss',
     './playground.adaptive.scss'
-  ],
-  animations: [
-    trigger('myAnimationTrigger', [
-      state('invisible', style({
-        height: '0px',
-        color: 'maroon',
-        borderColor: 'maroon'
-      })),
-      state('visible', style({
-        height: '*',
-        borderColor: 'green',
-        color: 'green'
-      })),
-      transition('invisible => visible', [
-        style({ 'text-decoration': 'line-through' }),
-        animate('2s')
-      ]),
-      transition('visible => invisible', [
-        style({ 'text-decoration': 'none' }),
-        animate('2s')
-        // transition("void => *", animate(...)) — запустит анимацию, когда элемент будет добавлен в DOM. При указании обратной транзакции, '* => void', анимация запустится при удалении элемента из DOM
-      ])
-    ])
- ]
+  ]
 })
 
 export class PlaygroundComponent implements OnInit, OnDestroy {
