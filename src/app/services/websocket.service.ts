@@ -1,16 +1,70 @@
 import { Injectable } from '@angular/core';
+import { Store } from '@ngrx/store';
+
 import { GameService } from './game.service';
+
+import { AppStateInterface } from '../store/state/app.state';
+
+import { SetGame } from '../store/actions/game.actions';
+import { SetPlayer } from '../store/actions/player.actions';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WebSocketService {
 
+  public socket: WebSocket;
+
   constructor(
-    private gameService: GameService
+    // private gameService: GameService,
+    private store: Store<AppStateInterface>
   ) { }
 
-  socket: WebSocket;
+  private onMessageFromServer(data) {
+    switch (data.state) {
+      case 'FIND_GAME':
+        // если пришли данные с настройками игры (data.state = 'FIND_GAME'),
+        // инициализируем игру с пришедшими с сервера данными, например:
+        // Доработать метод, если игрок отвалился и ему надо вернуться в игру и тогда игровые настройки изменяются
+        /*this.gameService.gameInit({ data });*/
+        console.log(`Метод: 'FIND_GAME', Данные с сервера получены: ${data}`);
+
+        //  ->  ДОРАБОТАТЬ  <-  //
+
+        break;
+      case 'START_GAME':
+        // если пришли данные о готовности/неготовности игроков к игре,
+        // то записываем эти данные куда нам надо, например:
+        this.store.dispatch(new SetGame({
+          playerIsShooter: data.playerIsShooter
+        }));
+
+        //  ->  ДОРАБОТАТЬ  <-  //
+
+        break;
+      case 'FIRE':
+        // если пришли данные с обновленными настройками игры (поля игроков, простреленные клетки, статус игры и тд),
+        // то обновляем аналогичные данные в клиенте, например:
+        this.store.dispatch(new SetPlayer({
+          field: data.player.field
+        }));
+
+        //  ->  ДОРАБОТАТЬ  <-  //
+
+        break;
+        case 'PASS':
+          // если пришли данные с обновленными настройками игры,
+          // то обновляем аналогичные данные в клиенте, например:
+
+          alert(data.message);
+
+          //  ->  ДОРАБОТАТЬ  <-  //
+
+          break;
+      default:
+        break;
+    }
+  }
 
   openSocket(userID, username) {
     // подключаемся к 'http://localhost:3000'
@@ -47,45 +101,23 @@ export class WebSocketService {
     };
   }
 
+  passGame(userID) {
+    if (this.socket) {
+      console.log(`Отправляем на сервер юзера`);
 
-  private onMessageFromServer(data) {
-    switch (data.state) {
-      case 'FIND_GAME':
-        // если пришли данные с настройками игры (data.state = 'FIND_GAME'),
-        // инициализируем игру с пришедшими с сервера данными, например:
-        this.gameService.gameInit(data);
-
-        //  ->  ДОРАБОТАТЬ  <-  //
-
-        break;
-      case 'START_GAME':
-        // если пришли данные о готовности/неготовности игроков к игре,
-        // то записываем эти данные куда нам надо, например:
-        this.gameService.playerIsShooter = data.playerIsShooter;
-
-        //  ->  ДОРАБОТАТЬ  <-  //
-
-        break;
-      case 'FIRE':
-        // если пришли данные с обновленными настройками игры (поля игроков, простреленные клетки, статус игры и тд),
-        // то обновляем аналогичные данные в клиенте, например:
-        this.gameService.player.field = data.player.field;
-
-        //  ->  ДОРАБОТАТЬ  <-  //
-
-        break;
-      default:
-        break;
+      // отправляем данные
+      this.socket.send(JSON.stringify({ userID, state: 'PASS' }));
+    } else {
+      console.log('Что-то пошло не так');
     }
   }
-
 
   findGameForUser(userID, username) {
     if (this.socket) {
       console.log(`Отправляем на сервер юзера`);
 
       // отправляем данные
-      this.socket.send(JSON.stringify({userID, username, state: 'FIND_GAME'}));
+      this.socket.send(JSON.stringify({ userID, username, state: 'FIND_GAME' }));
     } else {
       console.log('Что-то пошло не так');
     }
@@ -95,7 +127,7 @@ export class WebSocketService {
     if (this.socket) {
 
       // отправляем данные
-      this.socket.send(JSON.stringify({...settingsForGame, state: 'START_GAME'}));
+      this.socket.send(JSON.stringify({ ...settingsForGame, state: 'START_GAME' }));
     } else {
       console.log('Что-то пошло не так');
     }
@@ -105,7 +137,7 @@ export class WebSocketService {
     if (this.socket) {
 
       // отправляем данные
-      this.socket.send(JSON.stringify({cell, userID, state: 'FIRE'}));
+      this.socket.send(JSON.stringify({ cell, userID, state: 'FIRE' }));
     } else {
       console.log('Что-то пошло не так');
     }
