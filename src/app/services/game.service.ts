@@ -107,12 +107,10 @@ export class GameService {
   }
 
   passGame() {
-    this.wsService.passGame(this.playerState.id);
-
     if (this.gameState.mode === 'computer') {
       this.onGameOver(this.computerState);
     } else {
-      this.onGameOver(this.enemyState);
+      this.wsService.passGame(this.playerState.id);
     }
   }
 

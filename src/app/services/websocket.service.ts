@@ -53,17 +53,20 @@ export class WebSocketService {
 
         break;
         case 'PASS':
-          // если пришли данные с обновленными настройками игры,
-          // то обновляем аналогичные данные в клиенте, например:
-
-          alert(data.message);
+          alert('сдался');
+          this.store.dispatch(new SetGame({
+            // gameOn: data.gameOn,
+            gameOver: data.gameOver,
+            winner: data.winner
+          }));
+          this.store.dispatch(new AddGameMessages(data.messages));
 
           //  ->  ДОРАБОТАТЬ  <-  //
 
           break;
         case 'TIMEOUT':
           // событие, когда вышло время
-          alert('время вышло')
+          alert('время вышло');
           this.store.dispatch(new SetGame({
             // gameOn: data.gameOn,
             gameOver: data.gameOver,
