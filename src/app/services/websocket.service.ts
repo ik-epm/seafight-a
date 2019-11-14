@@ -5,7 +5,7 @@ import { GameService } from './game.service';
 
 import { AppStateInterface } from '../store/state/app.state';
 
-import { SetGame } from '../store/actions/game.actions';
+import { SetGame, AddGameMessages } from '../store/actions/game.actions';
 import { SetPlayer } from '../store/actions/player.actions';
 
 @Injectable({
@@ -60,6 +60,16 @@ export class WebSocketService {
 
           //  ->  ДОРАБОТАТЬ  <-  //
 
+          break;
+        case 'TIMEOUT':
+          // событие, когда вышло время
+          alert('время вышло')
+          this.store.dispatch(new SetGame({
+            // gameOn: data.gameOn,
+            gameOver: data.gameOver,
+            winner: data.winner
+          }));
+          this.store.dispatch(new AddGameMessages(data.messages));
           break;
       default:
         break;
