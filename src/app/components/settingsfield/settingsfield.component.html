@@ -9,7 +9,7 @@
     <button
       class="button-manual"
       (click)="onManual()"
-      [disabled]="gameOn || !gameService.playerState.ships.length">
+      [disabled]="gameOn || !playerShips.length">
       Manually place ships
     </button>
   </div>

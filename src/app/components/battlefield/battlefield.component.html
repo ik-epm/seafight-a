@@ -1,14 +1,14 @@
 <div class="battlefield-container"
     [ngClass] = "{
-        isEnemyShooter: (isEnemyField !== playerIsShooter$) && gameOn$ && !gameOver$
+        isEnemyShooter: (isEnemyField !== playerIsShooter) && gameOn && !gameOver
     }">
     <div
       [ngClass] = "{ rows: true }"
       *ngFor="let row of field; let i = index">
         <div
             [ngClass] = "{
-                isPointer: (isEnemyField && playerIsShooter$ && !gameOver$)
-                    || (!isEnemyField && !gameOn$ && shipsService.currentShip),
+                isPointer: (isEnemyField && playerIsShooter && !gameOver)
+                    || (!isEnemyField && !gameOn && shipsService.currentShip),
                 cell: true,
                 ship: field[i][j].isShip && !isEnemyField,
                 hit: field[i][j].cellStatus === 'hit',

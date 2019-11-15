@@ -2,31 +2,31 @@
     <div class="field-container">
         <div class="battlefield player-battlefield"
             [ngClass]="{
-                winner: winner$ === playerName$ && winner$ !== '',
-                hover: !gameOver$
+                winner: winner === playerName && winner !== '',
+                hover: !gameOver
             }">
             <app-battlefield
                 [isEnemyField]="false"
-                [field] = "playerField$">
+                [field] = "playerField">
             </app-battlefield>
         </div>
     </div>
     <div class="field-container">
         <div class="battlefield comp-battlefield"
             [ngClass]="{
-                compBattlefieldRotate: gameOn$,
-                winner: winner$ === 'computer',
-                hover: !gameOver$
+                compBattlefieldRotate: gameOn,
+                winner: winner === 'computer',
+                hover: !gameOver
             }">
             <app-battlefield
                 [isEnemyField]="true"
-                [field] = "mode$ === 'computer' ? computerField$ : enemyField$">
+                [field] = "mode === 'computer' ? computerField : enemyField">
             </app-battlefield>
         </div>
         <div
           class="settingsfield hover"
           [ngClass]="{
-            settingsRotate: gameOn$
+            settingsRotate: gameOn
           }">
             <app-settingsfield></app-settingsfield>
         </div>
@@ -44,10 +44,10 @@
     <div class="field-container">
         <div
           class="settingsfield hover"
-          *ngIf="messages$?.length">
+          *ngIf="messages?.length">
             <div class= "message">
                 <div
-                  *ngFor="let message of messages$; let i = index">
+                  *ngFor="let message of messages; let i = index">
                     {{message}}
                 </div>
             </div>
@@ -55,16 +55,15 @@
     </div>
     <div class="field-container">
         <button
-            [disabled]="!gameOn$"
-            (click)="gameService.gameInit()"
-            *ngIf="gameOver$">
-            New game
+          (click)="gameService.gameInit()"
+          *ngIf="gameOver">
+          New game
         </button>
         <button
-            [disabled]="!gameOn$"
-            (click)="gameService.passGame()"
-            *ngIf="gameOn$ && !gameOver$">
-            Pass
+          [disabled]="!gameOn"
+          (click)="gameService.passGame()"
+          *ngIf="gameOn && !gameOver">
+          Pass
         </button>
     </div>
 </div>

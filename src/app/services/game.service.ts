@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { CellInterface } from '../interfaces/cell.interface';
 import { ShipInterface } from '../interfaces/ship.interface';
@@ -18,16 +18,11 @@ import { EnemyStateInterface } from '../store/state/enemy.state';
 import { GameStateInterface } from '../store/state/game.state';
 
 import { GetAdvices } from '../store/actions/advices.actions';
-import { GetConfig } from '../store/actions/config.actions';
+import { GetConfig, SetConfig } from '../store/actions/config.actions';
 import { SetComputer } from '../store/actions/computer.actions';
 import { SetPlayer } from '../store/actions/player.actions';
 import { SetGame, AddGameMessages } from '../store/actions/game.actions';
-
-import { selectPlayerData } from '../store/selectors/player.selector';
-import { selectFieldSize } from '../store/selectors/config.selector';
-import { selectComputerData } from '../store/selectors/computer.selector';
-import { selectGameData } from '../store/selectors/game.selector';
-import { selectEnemyData } from '../store/selectors/enemy.selector';
+import { SetEnemy } from '../store/actions/enemy.actions';
 import { WebSocketService } from './websocket.service';
 
 
@@ -45,7 +40,6 @@ export class GameService {
   private enemyOnFire$: Subscription;
   // добавить типизацию
   public settings = {
-    playerShips: [],
     winner: '',
     messages: [],
     readyToPlay: false,
@@ -71,28 +65,118 @@ export class GameService {
     private wsService: WebSocketService,
     private store: Store<AppStateInterface>
   ) {
-    this.store.pipe(select(selectGameData)).subscribe(gameState => this.gameState = gameState);
-    this.store.pipe(select(selectPlayerData)).subscribe(playerState => this.playerState = playerState);
-    this.store.pipe(select(selectComputerData)).subscribe(computerState => this.computerState = computerState);
-    this.store.pipe(select(selectEnemyData)).subscribe(enemyState => this.enemyState = enemyState);
+    // (???)
+    // инжектим сервис для связи с сервером
+    // читаем юзера из локалсторэджа, если есть, то записываем его в локальные данные на клиенте и
+    // связываемся с сервером, отправляем ему текущего юзверя
+    // получаем от сервера либо данные для игры, если у этого юзера есть какая-то незавершенная игра
+    // и записываем их в локальные данные на клиенте
+    // либо инициализируем новую игру, если юзер на сервере есть, но открытых игр у него нет
+    // (???)
+    console.log('constructor');
+    const id = localStorage.getItem('userID');
+    console.log('id', id);
+
+    if (id) {
+      this.store.dispatch(new SetPlayer({
+        username: localStorage.getItem('username')
+      }));
+      const localState = localStorage.getItem('gameState');
+      const defaultLocalState = localStorage.getItem('defaultState');
+      if (localState) {
+        /*console.log('localState', localState)*/
+        this.setLocalStorageIsState(localState);
+      } else if (defaultLocalState) {
+
+        if (JSON.parse(defaultLocalState).game.mode === 'online') {
+          console.log('JSON.parse(defaultLocalState).game.mode === online');
+          this.setLocalStorageIsState(defaultLocalState);
+          this.wsService.openSocket(id, localStorage.getItem('username'));
+        } else {
+          this.setLocalStorageIsState(defaultLocalState);
+        }
+      } else {
+        console.log('== Log Error default local state is missing');
+      }
+    }
 
     // качаем настройки
     this.store.dispatch(new GetConfig());
     // качаем советы
     this.store.dispatch(new GetAdvices());
 
-    this.store.pipe(select(selectFieldSize)).subscribe(fieldSize => this.fieldSize = fieldSize);
+    this.store.subscribe(state => {
+      const { config, game, player, computer, enemy } = state;
+      this.fieldSize = config.fieldSize;
+      this.gameState = game;
+      this.playerState = player;
+      this.computerState = computer;
+      this.enemyState = enemy;
 
-    // const id = localStorage.getItem('userID');
-    // if (id) {
-    //   this.store.dispatch(new SetPlayer({
-    //     username: localStorage.getItem('username')
-    //   }));
-    // }
-    // this.gameInit();
+      this.saveStateIsLocalStorage(state);
+    });
   }
 
-  private onGameOver = (enemy: ComputerStateInterface) => {
+  private saveStateIsLocalStorage(state) {
+    const { config, game, player, computer, enemy } = state;
+
+    if (!this.gameState.gameOn
+      && this.playerState.field.length !== 0
+      && this.playerState.ships.length === 0
+      && this.gameState.mode !== '') {
+      localStorage.setItem('defaultState', JSON.stringify({
+        config,
+        game,
+        player,
+        ...(this.gameState.mode === 'computer' && { computer })
+      }));
+    }
+
+    if (this.gameState.gameOn && this.gameState.mode === 'computer') {
+      localStorage.setItem('gameState', JSON.stringify({
+        config,
+        game,
+        player,
+        computer
+      }));
+    }
+  }
+
+  private setLocalStorageIsState(state) {
+    const { player, computer, game, config } = JSON.parse(state);
+    this.store.dispatch(new SetConfig(config));
+    this.store.dispatch(new SetGame(game));
+    this.store.dispatch(new SetPlayer(player));
+    this.store.dispatch(new SetComputer(computer));
+    this.shipsService.playerShipsInit();
+    if (this.enemyOnFire$) this.enemyOnFire$.unsubscribe();
+  }
+
+  private setStateInit(mode) {
+    this.shipsService.playerShipsInit();
+
+    this.store.dispatch(new SetPlayer({
+      ships: [],
+      field: this.battlefieldService.getField([])
+    }));
+    if (mode === 'computer') {
+      const ships = this.shipsService.generateShips();
+      this.store.dispatch(new SetComputer({
+        ships,
+        field: this.battlefieldService.getField(ships),
+        enemyCoords: this.setEnemyCoords()
+      }));
+      if (this.enemyOnFire$) this.enemyOnFire$.unsubscribe();
+    } else {
+      this.store.dispatch(new SetEnemy({
+        username: '',
+        field: this.battlefieldService.getField([])
+      }));
+    }
+    this.store.dispatch(new SetGame(this.settings));
+  }
+
+  private onGameOver = (enemy: ComputerStateInterface): void => {
     this.store.dispatch(new SetGame({
       winner: enemy.username,
       gameOver: true
@@ -104,58 +188,7 @@ export class GameService {
       this.gameState.winner + ' is winner',
       '-'
     ]));
-  }
-
-  passGame() {
-    if (this.gameState.mode === 'computer') {
-      this.onGameOver(this.computerState);
-    } else {
-      this.wsService.passGame(this.playerState.id);
-    }
-  }
-
-  gameInit(): void {
-    this.settings.playerIsShooter = Math.round(Math.random()) ? true : false;
-
-    if (this.gameState.mode === 'computer') {
-      const ships = this.shipsService.generateShips();
-      this.shipsService.playerShipsInit();
-
-      this.store.dispatch(new SetPlayer({
-        ships: [],
-        field: this.battlefieldService.getField([])
-      }));
-      this.store.dispatch(new SetComputer({
-        ships,
-        field: this.battlefieldService.getField(ships),
-        enemyCoords: this.setEnemyCoords()
-      }));
-      this.store.dispatch(new SetGame(this.settings));
-    } else {
-      console.log('online');
-      // (???)
-      // инжектим сервис для связи с сервером
-      // читаем юзера из локалсторэджа, если есть, то записываем его в локальные данные на клиенте и
-      // связываемся с сервером, отправляем ему текущего юзверя
-      // получаем от сервера либо данные для игры, если у этого юзера есть какая-то незавершенная игра
-      // и записываем их в локальные данные на клиенте
-      // либо инициализируем новую игру, если юзер на сервере есть, но открытых игр у него нет
-      // (???)
-
-      const id = localStorage.getItem('userID');
-      console.log(id);
-
-      if (id) {
-        this.store.dispatch(new SetPlayer({
-          username: localStorage.getItem('username')
-        }));
-        // this.gameInit();
-      }
-      // localStorage.clear();
-      // console.log('clear localStorage', this.player.id, localStorage);
-    }
-    if (this.enemyOnFire$) this.enemyOnFire$.unsubscribe();
-  }
+  };
 
   private setEnemyCoords(): CoordsInterface[] {
     const coords: CoordsInterface[] = [];
@@ -180,7 +213,7 @@ export class GameService {
       if (isCell) {
         const cell: CellInterface = targetField[coordX][coordY];
 
-        if (!cell.isShip) { cell.cellStatus = 'miss'; }
+        if (!cell.isShip) cell.cellStatus = 'miss';
       }
     };
 
@@ -193,15 +226,48 @@ export class GameService {
     }
   }
 
-  private definitionData = (type) => {
+  private definitionData = (type: string) => {
+    let state;
     if (this.gameState.mode === 'computer' && type === 'enemy') {
-      return this.computerState;
+      state = this.computerState;
     } else if (type === 'enemy') {
-      return this.enemyState;
+      state = this.enemyState;
     } else {
-      return this.playerState;
+      state = this.playerState;
+    }
+
+    return { ...state };
+  };
+
+  private definitionChangeFieldReducer = (type, field) => {
+    if (this.gameState.mode === 'computer' && type === 'enemy') {
+      return new SetComputer({
+        field
+      });
+    } else if (type === 'enemy') {
+      return new SetEnemy({
+        field
+      });
+    } else {
+      return new SetPlayer({
+        field
+      });
     }
   };
+
+  gameInit(): void {
+    console.log('gameInit');
+    this.setStateInit(this.gameState.mode);
+    localStorage.removeItem('gameState');
+  }
+
+  passGame() {
+    if (this.gameState.mode === 'computer') {
+      this.onGameOver(this.computerState);
+    } else {
+      this.wsService.passGame(this.playerState.id);
+    }
+  }
 
   game(): void {
     let shooter: string;
@@ -212,9 +278,9 @@ export class GameService {
         : this.enemyState.username;
     } else {
       shooter = 'Computer';
-      this.enemyOnFire();
     }
 
+    if (shooter === 'Computer') this.enemyOnFire();
     this.store.dispatch(new AddGameMessages([ `${shooter} shoots first` ]));
   }
 
@@ -229,7 +295,6 @@ export class GameService {
       this.store.dispatch(new SetComputer({
         enemyCoords
       }));
-      // this.store.dispatch(new AddGameMessages([ '-' ]));
 
       this.onFire(coords.coordX, coords.coordY, 'player', 'enemy');
 
@@ -283,23 +348,12 @@ export class GameService {
     // start if
     if (!cellStatus && !this.gameState.gameOver) {
       isShip ? hitAction() : missAction();
+      this.store.dispatch(this.definitionChangeFieldReducer(target, targetData.field));
     }
 
     // end if
     if (targetData.ships.every((ship: ShipInterface) => ship.isSunk) && !this.gameState.gameOver) {
       this.onGameOver(shooterData);
-
-      // this.store.dispatch(new SetGame({
-      //   winner: shooterData.username,
-      //   gameOver: true
-      // }));
-      // this.store.dispatch(new AddGameMessages([
-      //   '** Game over **',
-      //   '-',
-      //   '-',
-      //   this.gameState.winner + ' is winner',
-      //   '-'
-      // ]));
     }
   }
 }
