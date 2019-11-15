@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 
-import { GameService } from './game.service';
-
 import { AppStateInterface } from '../store/state/app.state';
 
 import { SetGame, AddGameMessages } from '../store/actions/game.actions';
@@ -16,7 +14,6 @@ export class WebSocketService {
   public socket: WebSocket;
 
   constructor(
-    // private gameService: GameService,
     private store: Store<AppStateInterface>
   ) { }
 
@@ -53,27 +50,27 @@ export class WebSocketService {
 
         break;
         case 'PASS':
-          alert('сдался');
           this.store.dispatch(new SetGame({
-            // gameOn: data.gameOn,
             gameOver: data.gameOver,
             winner: data.winner
           }));
           this.store.dispatch(new AddGameMessages(data.messages));
 
-          //  ->  ДОРАБОТАТЬ  <-  //
+          //  ->  ДОРАБОТАТЬ (???) <-  //
 
           break;
         case 'TIMEOUT':
-          // событие, когда вышло время
-          alert('время вышло');
           this.store.dispatch(new SetGame({
-            // gameOn: data.gameOn,
             gameOver: data.gameOver,
             winner: data.winner
           }));
           this.store.dispatch(new AddGameMessages(data.messages));
           break;
+
+        case 'CLOSE':
+          this.store.dispatch(new AddGameMessages(data.messages));
+          break;
+
       default:
         break;
     }
