@@ -24,23 +24,29 @@ import { AppStateInterface } from '../../store/state/app.state';
 
 export class PlaygroundComponent implements OnInit, OnDestroy {
 
-  public playerName$: string;
-  public gameOn$: boolean;
-  public gameOver$: boolean;
-  public winner$: string;
-  public mode$: string;
-  private readyToPlay$: boolean;
-  public playerField$: CellInterface[][];
-  public computerField$: CellInterface[][];
-  public enemyField$: CellInterface[][];
-  private gameAdvices$: GameAdviceInterface[];
-  private preGameAdvices$: GameAdviceInterface[];
-  private shipsData$: ShipsDataInterface[];
-  public messages$: string[];
+  public playerName: string;
+  public enemyName: string;
+  public gameOn: boolean;
+  public gameOver: boolean;
+  public winner: string;
+  public mode: string;
+  public playerField: CellInterface[][];
+  public computerField: CellInterface[][];
+  public enemyField: CellInterface[][];
+  public messages: string[];
+  private readyToPlay: boolean;
+  private gameAdvices: GameAdviceInterface[];
+  private preGameAdvices: GameAdviceInterface[];
+  private shipsData: ShipsDataInterface[];
 
   public advice: GameAdviceInterface;
   private currentAdviceIndex = 0;
   private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
+
+  // переменные для таймера (минуты/секунды)
+  private min: number;
+  private sec1: number;
+  private sec2: number;
 
   constructor(
     private gameService: GameService,
@@ -48,18 +54,49 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
     private store: Store<AppStateInterface>
   ) { }
 
+  // rxjs версия таймера
+  timer$: Subscription = timer(1e3)
+    .pipe(takeUntil(this.destroy))
+    .subscribe(() => this.getTimer());
+
+  private getTimer() {
+
+    this.min = 0;
+    this.sec1 = 0;
+    this.sec2 = 0;
+
+    if (this.gameOver) {
+      console.log("exit");
+    } else {
+      setInterval(() => {
+        if (this.sec1 < 5 || this.sec2 < 9) {
+          if (this.sec2 < 9) {
+            this.sec2++;
+          } else {
+            this.sec2 = 0;
+            this.sec1++;
+          }
+        } else {
+          this.sec1 = 0;
+          this.sec2 = 0;
+          this.min++;
+        }
+      }, 1000);
+    }
+  }
+
   // таймер, который дает советы каждые 15 секунд, начиная со второй секунды
   advice$: Subscription = timer(2e3, 15e3)
     .pipe(takeUntil(this.destroy))
     .subscribe(num => this.getAdvice(num));
 
   private getAdvice(num: number): void {
-    if (this.gameOver$) {
+    if (this.gameOver) {
       this.advice = null;
     } else {
-      this.generateAdvice(this.gameOn$ && !this.gameOver$
-        ? this.gameAdvices$
-        : this.preGameAdvices$,
+      this.generateAdvice(this.gameOn && !this.gameOver
+        ? this.gameAdvices
+        : this.preGameAdvices,
         num
       );
     }
@@ -97,21 +134,22 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
         advices: { gameAdvices, preGameAdvices },
         config: { shipsData }
       } = allState;
-      this.playerField$ = field;
-      this.playerName$ = username;
-      this.messages$ = messages;
-      this.gameOn$ = gameOn;
-      this.gameOver$ = gameOver;
-      this.winner$ = winner;
-      this.mode$ = mode;
-      this.readyToPlay$ = readyToPlay;
-      this.computerField$ = computer.field;
-      this.enemyField$ = enemy.field;
-      this.gameAdvices$ = gameAdvices;
-      this.preGameAdvices$ = preGameAdvices;
-      this.shipsData$ = shipsData;
+      this.playerField = field;
+      this.playerName = username;
+      this.enemyName = enemy.username;
+      this.messages = messages;
+      this.gameOn = gameOn;
+      this.gameOver = gameOver;
+      this.winner = winner;
+      this.mode = mode;
+      this.readyToPlay = readyToPlay;
+      this.computerField = computer.field;
+      this.enemyField = enemy.field;
+      this.gameAdvices = gameAdvices;
+      this.preGameAdvices = preGameAdvices;
+      this.shipsData = shipsData;
     });
-    if (this.readyToPlay$) this.shipsService.allShips = new Array(this.shipsData$.length).fill([]);
+    if (this.readyToPlay) this.shipsService.allShips = new Array(this.shipsData.length).fill([]);
   }
 
   ngOnDestroy(): void {

@@ -166,7 +166,7 @@ export class ShipsService {
           const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
           coordX = this.toolsService.getRandom(0, maxCoordX);
           coordY = this.toolsService.getRandom(0, maxCoordY);
-        } while (this.isOccupied (occupiedCells, size, coordX, coordY, directionX, directionY));
+        } while (this.isOccupied(occupiedCells, size, coordX, coordY, directionX, directionY));
 
         for (let i = 0; i < size; i++) {
           coords.push({

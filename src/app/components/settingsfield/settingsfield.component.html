@@ -9,7 +9,7 @@
     <button
       class="button-manual"
       (click)="onManual()"
-      [disabled]="gameOn">
+      [disabled]="gameOn || searchEnemy || !playerShips.length">
       Manually place ships
     </button>
   </div>
@@ -18,15 +18,15 @@
     <button
       class="button button-auto"
       (click)="onAuto()"
-      [disabled]="gameOn">
+      [disabled]="gameOn || searchEnemy">
       Auto
     </button>
 
     <button
-      *ngIf="readyToPlay"
       class="button button-play"
-      (click)="onPlay()"
-      [disabled]="gameOn">
+      *ngIf="readyToPlay"
+      [disabled]="gameOn || searchEnemy"
+      (click)="onPlay()">
         <span class="button-line-top"></span>
         <span class="button-line-right"></span>
         <span class="button-line-left"></span>

@@ -29,6 +29,8 @@ export function logger(reducer: ActionReducer<AppStateInterface>):
     /!*console.log('state', state);*!/
     console.log('action', action.payload);
     console.log(' -- log - end --');*/
+    console.log('state', state);
+    console.log('action', action);
     return reducer(state, action);
   };
 }

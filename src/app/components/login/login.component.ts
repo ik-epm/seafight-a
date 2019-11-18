@@ -13,7 +13,7 @@ import { SetPlayerName } from '../../store/actions/player.actions';
 import { SetGame } from '../../store/actions/game.actions';
 
 import { selectPlayerName } from '../../store/selectors/player.selector';
-import {selectGameMode} from '../../store/selectors/game.selector';
+import { selectGameMode } from '../../store/selectors/game.selector';
 
 @Component({
   selector: 'app-login',
@@ -42,14 +42,15 @@ export class LoginComponent implements OnInit, OnDestroy {
     // если логин в форме отличается от текущего юзера, то подключаемся к новой игре
     const username = this.myForm.value.username;
     const mode = this.myForm.controls.mode.value;
-    console.log('mode', mode)
+    /*console.log('mode', mode)*/
 
     if (this.playerName !== username || this.mode !== mode) {
 
       const id = username + Date.now();
 
       this.setDataState({ id, username, mode });
-      this.definitionModeGame(mode, id, username);
+      // инициализируем новую игру
+      this.gameService.gameInit();
     }
   }
 
@@ -64,25 +65,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     // записываем в localStorage user
     localStorage.setItem('userID', id);
     localStorage.setItem('username', username);
-    console.log('--- Log --- localStorage id player', localStorage);
-  }
-
-  private definitionModeGame(mode, id, username): void {
-    if (mode === 'computer') {
-      /*alert('Играем с ботом');*/
-    } else if (mode === 'online') { // открываем сокет
-      alert('Играем онлайн');
-      if (this.wsService.socket) {
-        this.wsService.socket.close();    //  <- тут отсоединяем текущего юзера (???)
-      }
-      this.wsService.openSocket(id, username);
-      // this.wsService.findGameForUser(id, username)
-      // this.gameService.gameInit();
-    } else {
-      console.log(`-- Log -- error - mode ${mode}`);
-    }
-    // инициализируем новую игру
-    this.gameService.gameInit();
+    /*console.log('--- Log --- localStorage id player', localStorage);*/
   }
 
   ngOnInit() {
@@ -90,6 +73,12 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.playerName = playerName;
     });
     this.store.pipe(select(selectGameMode), takeUntil(this.destroy)).subscribe(mode => {
+      if (this.mode
+          && this.mode !== mode
+          && mode === 'computer') {
+        console.log('началось')
+        this.gameService.passGame(this.mode);
+      }
       this.mode = mode;
     });
 

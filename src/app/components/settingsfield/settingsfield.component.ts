@@ -4,6 +4,7 @@ import { ReplaySubject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { ShipsDataInterface } from '../../interfaces/shipsData.interface';
+import { ShipInterface } from '../../interfaces/ship.interface';
 
 import { ShipsService } from 'src/app/services/ships.service';
 import { GameService } from 'src/app/services/game.service';
@@ -16,6 +17,9 @@ import { SetGame } from '../../store/actions/game.actions';
 
 import { selectConfigData } from '../../store/selectors/config.selector';
 import { selectGameData } from '../../store/selectors/game.selector';
+import {selectPlayerData, selectPlayerShips} from '../../store/selectors/player.selector';
+import {WebSocketService} from '../../services/websocket.service';
+import {CellInterface} from '../../interfaces/cell.interface';
 
 @Component({
   selector: 'app-settingsfield',
@@ -28,15 +32,20 @@ import { selectGameData } from '../../store/selectors/game.selector';
 export class SettingsfieldComponent implements OnInit, OnDestroy {
 
   public shipsData: ShipsDataInterface[];
+  public playerShips: ShipInterface[];
   public gameOn: boolean;
+  public searchEnemy: boolean;
   public readyToPlay: boolean;
   private fieldSize: number;
+  private mode: string;
+  private playerField: CellInterface[][];
   private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
 
   constructor(
     private shipsService: ShipsService,
     private battlefieldService: BattlefieldService,
     private gameService: GameService,
+    private wsService: WebSocketService,
     private store: Store<AppStateInterface>
   ) { }
 
@@ -66,10 +75,21 @@ export class SettingsfieldComponent implements OnInit, OnDestroy {
 
   onPlay(): void {
     // запускаем игру
-    this.store.dispatch(new SetGame({
-      gameOn: true
-    }));
-    this.gameService.game();
+    if (this.mode === 'online') {
+      this.store.dispatch(new SetGame({
+        searchEnemy: true
+      }));
+      this.wsService.startGame({
+        userID: localStorage.getItem('userID'),
+        username: localStorage.getItem('username'),
+        ships: this.playerShips,
+        field: this.playerField
+      });
+    } else {
+      this.store.dispatch(new SetGame({
+        gameOn: true
+      }));
+    }
   }
 
   onManual(): void {
@@ -90,11 +110,18 @@ export class SettingsfieldComponent implements OnInit, OnDestroy {
     this.store.pipe(select(selectGameData), takeUntil(this.destroy)).subscribe(gameState => {
       this.readyToPlay = gameState.readyToPlay;
       this.gameOn = gameState.gameOn;
+      this.searchEnemy = gameState.searchEnemy;
+      this.mode = gameState.mode;
     });
     this.store.pipe(select(selectConfigData), takeUntil(this.destroy)).subscribe(configState => {
       const { fieldSize, shipsData } = configState;
       this.shipsData = shipsData;
       this.fieldSize = fieldSize;
+    });
+    this.store.pipe(select(selectPlayerData), takeUntil(this.destroy)).subscribe(playerState => {
+      const { ships, field } = playerState;
+      this.playerShips = ships;
+      this.playerField = field;
     });
   }
 

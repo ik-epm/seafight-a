@@ -6,6 +6,7 @@ export interface GameStateInterface {
   winner: string;
   mode?: string;
   messages: string[];
+  searchEnemy: boolean;
 }
 
 export const initialGameState = {
@@ -15,5 +16,6 @@ export const initialGameState = {
   readyToPlay: false,
   winner: '',
   mode: '',
-  messages: []
+  messages: [],
+  searchEnemy: false
 };
