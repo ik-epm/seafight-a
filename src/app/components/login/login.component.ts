@@ -13,7 +13,7 @@ import { SetPlayerName } from '../../store/actions/player.actions';
 import { SetGame } from '../../store/actions/game.actions';
 
 import { selectPlayerName } from '../../store/selectors/player.selector';
-import {selectGameMode} from '../../store/selectors/game.selector';
+import { selectGameMode } from '../../store/selectors/game.selector';
 
 @Component({
   selector: 'app-login',
@@ -68,18 +68,19 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private definitionModeGame(mode, id, username): void {
-    if (mode === 'computer') {
-      /*alert('Играем с ботом');*/
-    } else if (mode === 'online') { // открываем сокет
-      alert('Играем онлайн');
-      if (this.wsService.socket) {
-        this.wsService.socket.close();    //  <- тут отсоединяем текущего юзера (???)
-      }
-      this.wsService.openSocket(id, username);
-      // this.wsService.findGameForUser(id, username)
-      // this.gameService.gameInit();
-    } else {
-      console.log(`-- Log -- error - mode ${mode}`);
+    switch (mode) {
+      case 'online':
+        /*alert('Играем онлайн');*/
+        if (this.wsService.socket) {
+          this.wsService.socket.close();    //  <- тут отсоединяем текущего юзера (???)
+        }
+        this.wsService.openSocket(id, username);
+        break;
+      case 'computer':
+        /*alert('Играем с ботом');*/
+        break;
+      default:
+        console.log(`== Log Error unknown mode: ${mode}`);
     }
     // инициализируем новую игру
     this.gameService.gameInit();

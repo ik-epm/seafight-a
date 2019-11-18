@@ -4,6 +4,7 @@ import { ReplaySubject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { ShipsDataInterface } from '../../interfaces/shipsData.interface';
+import { ShipInterface } from '../../interfaces/ship.interface';
 
 import { ShipsService } from 'src/app/services/ships.service';
 import { GameService } from 'src/app/services/game.service';
@@ -16,6 +17,7 @@ import { SetGame } from '../../store/actions/game.actions';
 
 import { selectConfigData } from '../../store/selectors/config.selector';
 import { selectGameData } from '../../store/selectors/game.selector';
+import { selectPlayerShips } from '../../store/selectors/player.selector';
 
 @Component({
   selector: 'app-settingsfield',
@@ -28,6 +30,7 @@ import { selectGameData } from '../../store/selectors/game.selector';
 export class SettingsfieldComponent implements OnInit, OnDestroy {
 
   public shipsData: ShipsDataInterface[];
+  public playerShips: ShipInterface[];
   public gameOn: boolean;
   public readyToPlay: boolean;
   private fieldSize: number;
@@ -95,6 +98,9 @@ export class SettingsfieldComponent implements OnInit, OnDestroy {
       const { fieldSize, shipsData } = configState;
       this.shipsData = shipsData;
       this.fieldSize = fieldSize;
+    });
+    this.store.pipe(select(selectPlayerShips), takeUntil(this.destroy)).subscribe(value => {
+      this.playerShips = value;
     });
   }
 

@@ -4,7 +4,8 @@ import { ConfigStateInterface } from '../state/config.state';
 
 export enum EnumConfigActions {
   GetConfig = '[Config] Get Config',
-  GetConfigSuccess = '[Config] Get Config Success'
+  GetConfigSuccess = '[Config] Get Config Success',
+  SetConfig = '[Config] Set Config',
 }
 
 export class GetConfig implements Action {
@@ -19,4 +20,14 @@ export class GetConfigSuccess implements Action {
   ) { }
 }
 
-export type ConfigActions = GetConfig | GetConfigSuccess;
+export class SetConfig implements Action {
+  public readonly type = EnumConfigActions.SetConfig;
+
+  constructor(
+    public payload: ConfigStateInterface
+  ) { }
+}
+
+export type ConfigActions = GetConfig
+  | GetConfigSuccess
+  | SetConfig;

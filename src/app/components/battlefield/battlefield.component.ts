@@ -35,10 +35,10 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
   @Input() isEnemyField: boolean;
   @Input() field: CellInterface[][];
 
-  public gameOn$: boolean;
-  public gameOver$: boolean;
-  public playerIsShooter$: boolean;
-  private playerShips$: ShipInterface[];
+  public gameOn: boolean;
+  public gameOver: boolean;
+  public playerIsShooter: boolean;
+  private playerShips: ShipInterface[];
   private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
 
   constructor(
@@ -52,15 +52,13 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
   onCellClick(cell: CellInterface): void {
 
     // условие для выстрела по противнику
-    // стреляем, если поле - противника и игрок - стрелок
     if (this.isEnemyField
-      && this.playerIsShooter$) {
+      && this.playerIsShooter) {
       this.onFireAction(cell);
     }
     // условие для ручной расстановки корабля на поле
-    // если поле игрока, игра еще не началась, выбран какой-то корабль и в текущей ячейке нет корабля
     if (!this.isEnemyField
-      && !this.gameOn$
+      && !this.gameOn
       && this.shipsService.currentShip
       && !cell.isShip) {
       this.manualPlacementShipAction(cell);
@@ -68,41 +66,43 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
     // условие для смены направления корабля
     // если поле игрока, игра еще не началась и в текущей ячейке корабль
     if (!this.isEnemyField
-      && !this.gameOn$
+      && !this.gameOn
       && cell.isShip) {
       this.changeDirectionShipAction(cell);
     }
   }
 
   private onFireAction(cell) {
+    // стреляем, если поле противника и игрок - стрелок
     const { coordX, coordY } = cell;
 
     this.gameService.onFire(coordX, coordY, 'enemy', 'player');
 
     // если игрок промахнулся, то стреляет компьютер
-    if (!this.playerIsShooter$) {
+    if (!this.playerIsShooter) {
       this.gameService.enemyOnFire();
     }
   }
 
+  // Проверить работоспособность, не корректно отрабатывает
   private manualPlacementShipAction(cell) {
     // пробуем разместить корабль
     const shipDirection: number = this.toolsService.getRandom(0, 1);
-    const { currentShip, occupiedPlayerCells: occupiedCells, allShips } = this.shipsService;
+    const { currentShip, occupiedPlayerCells, allShips } = this.shipsService;
 
     // генерируем корабль
     let ship: ShipInterface = this.shipsService.placeShip(currentShip, cell, shipDirection);
 
     if (!ship) {
       // корабль не сгенерировался, то пробуем в другом направлении
-      ship = this.shipsService.placeShip(currentShip, cell, shipDirection ? 0 : 1);
+      ship = this.shipsService.placeShip(currentShip, cell, Number(!shipDirection));
     }
 
     if (ship) {
       // корабль сгенерировался
       // меняем статус у клеток корабля и вокруг на занятые
       ship.coords.forEach((coords) => {
-        this.shipsService.occupyCells(occupiedCells, coords);
+        this.shipsService.occupyCells(occupiedPlayerCells, coords);
       });
 
       // добавляем корабль игроку
@@ -110,7 +110,7 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
 
       // обновляем поле
       this.store.dispatch(new SetPlayer({
-        field: this.battlefieldService.getField(this.playerShips$)
+        field: this.battlefieldService.getField(this.playerShips)
       }));
 
       // если все корабли установлены, то готовы к игре
@@ -124,8 +124,8 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
 
   private changeDirectionShipAction(cell) {
     // находим наш корабль среди кораблей игрока и вырезаем
-    const shipIndex: number = this.playerShips$.findIndex((ship: ShipInterface) => ship.id === cell.idShip);
-    const ship: ShipInterface = this.playerShips$.splice(shipIndex, 1)[0];
+    const shipIndex: number = this.playerShips.findIndex((ship: ShipInterface) => ship.id === cell.idShip);
+    const ship: ShipInterface = this.playerShips.splice(shipIndex, 1)[0];
 
     // меняем статус клеток корабля и вокруг на незанятые
     ship.coords.forEach((coords) => {
@@ -133,7 +133,7 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
     });
 
     // для остальных кораблей обновляем статус занятых клеток, если где-то было пересечение с предыдущим кораблем
-    this.playerShips$.forEach(ship => {
+    this.playerShips.forEach(ship => {
       ship.coords.forEach((coords) => {
         this.shipsService.occupyCells(this.shipsService.occupiedPlayerCells, coords);
       });
@@ -150,7 +150,7 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
     if (newShip) {
       this.store.dispatch(new AddPlayerShip(newShip));
       this.store.dispatch(new SetPlayer({
-        field: this.battlefieldService.getField(this.playerShips$)
+        field: this.battlefieldService.getField(this.playerShips)
       }));
     } else {
       this.shipsService.placeShip(ship, ship.coords[0], ship.direction);
@@ -161,12 +161,12 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.store.pipe(select(selectGameData), takeUntil(this.destroy)).subscribe(gameState => {
       const { gameOn, gameOver, playerIsShooter } = gameState;
-      this.gameOn$ = gameOn;
-      this.gameOver$ = gameOver;
-      this.playerIsShooter$ = playerIsShooter;
+      this.gameOn = gameOn;
+      this.gameOver = gameOver;
+      this.playerIsShooter = playerIsShooter;
     });
     this.store.pipe(select(selectPlayerShips), takeUntil(this.destroy)).subscribe(playerShips => {
-      this.playerShips$ = playerShips;
+      this.playerShips = playerShips;
     });
   }
 
