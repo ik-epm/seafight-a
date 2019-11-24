@@ -28,6 +28,7 @@ export class SetGame implements Action {
       winner?: string;
       mode?: string;
       messages?: string[];
+      searchEnemy?: boolean;
     }
   ) { }
 }

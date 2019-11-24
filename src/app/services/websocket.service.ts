@@ -24,7 +24,7 @@ export class WebSocketService {
   ) { }
 
   private onMessageFromServer(data) {
-    console.log(`Metod: ${data.state}, data:`, data);
+    console.log(`Metod: ${data.state}, data:`, data, data.time);
     switch (data.state) {
       case 'FIND_GAME':
         // если пришли данные с настройками игры (data.state = 'FIND_GAME'),
@@ -61,6 +61,46 @@ export class WebSocketService {
   }
 
   private setDataStateBeginingGame(data) {
+    this.store.dispatch(new SetPlayer({
+      ships: data.player.ships,
+      field: data.player.field || this.battlefieldService.getField([]),
+      username: localStorage.getItem('username')
+    }));
+    this.store.dispatch(new SetEnemy({
+      field: data.enemy.field || this.battlefieldService.getField([]),
+      username: data.enemy.username
+    }));
+    this.store.dispatch(new SetGame({
+      gameOver: data.gameOver,
+      gameOn: data.gameOn,
+      messages: data.messages,
+      winner: data.winner,
+      playerIsShooter: data.playerIsShooter,
+      mode: 'online'
+    }));
+    if (data.player.ships.length && !data.gameOn) {
+      this.shipsService.allShips = [];
+      this.store.dispatch(new SetGame({
+        searchEnemy: true,
+        readyToPlay: true
+      }));
+      this.store.dispatch(new AddGameMessages([`Waiting ${data.enemy.username}`]));
+    }
+  }
+
+  private setDataStateStartingGame(data) {
+    const { playerIsShooter } = data;
+    this.store.dispatch(new SetGame({
+      playerIsShooter,
+      messages: data.messages,
+      gameOn: true,
+      searchEnemy: false
+    }));
+    // this.store.dispatch(new AddGameMessages(data.messages));
+    //  ->  ДОРАБОТАТЬ  <-  //
+  }
+
+  private setDataStateFire(data) {
     this.store.dispatch(new SetGame({
       gameOver: data.gameOver,
       gameOn: data.gameOn,
@@ -71,52 +111,39 @@ export class WebSocketService {
     }));
     this.store.dispatch(new SetPlayer({
       ships: data.player.ships,
-      field: data.player.field || this.battlefieldService.getField([]),
-      username: data.player.username
+      field: data.player.field,
+      username: localStorage.getItem('username')
     }));
     this.store.dispatch(new SetEnemy({
-      field: data.enemy.field || this.battlefieldService.getField([]),
+      field: data.enemy.field,
       username: data.enemy.username
     }));
-    if (!data.gameOn) this.shipsService.playerShipsInit();
-  }
-
-  private setDataStateStartingGame(data) {
-    this.store.dispatch(new SetGame({
-      playerIsShooter: data.playerIsShooter
-    }));
-
-    //  ->  ДОРАБОТАТЬ  <-  //
-  }
-
-  private setDataStateFire(data) {
-    this.store.dispatch(new SetPlayer({
-      field: data.player.field
-    }));
-
-    //  ->  ДОРАБОТАТЬ  <-  //
   }
 
   private setDataStatePassGame(data) {
     this.store.dispatch(new SetGame({
       gameOver: data.gameOver,
-      winner: data.winner
+      messages: data.messages,
+      winner: data.winner,
+      gameOn: true,
+      searchEnemy: false
     }));
-    this.store.dispatch(new AddGameMessages(data.messages));
-
-    //  ->  ДОРАБОТАТЬ (???) <-  //
   }
 
   private setDataStateTimeoutGame(data) {
     this.store.dispatch(new SetGame({
       gameOver: data.gameOver,
-      winner: data.winner
+      messages: data.messages,
+      winner: data.winner,
+      gameOn: true,
+      searchEnemy: false
     }));
-    this.store.dispatch(new AddGameMessages(data.messages));
   }
 
   private setDataStateCloseGame(data) {
-    this.store.dispatch(new AddGameMessages(data.messages));
+    this.store.dispatch(new SetGame({
+      messages: data.messages
+    }));
   }
 
   openSocket(userID, username): void {
@@ -127,6 +154,9 @@ export class WebSocketService {
     this.socket.onopen = () => {
       console.log(`Connection is done`);
       this.findGameForUser(userID, username);
+      this.store.dispatch(new SetGame({
+        searchEnemy: false
+      }));
     };
 
     // вешаем событие, которое срабатывает, когда получаем данные

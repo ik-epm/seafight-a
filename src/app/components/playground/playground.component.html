@@ -15,7 +15,7 @@
         <div class="battlefield comp-battlefield"
             [ngClass]="{
                 compBattlefieldRotate: gameOn,
-                winner: winner === 'computer',
+                winner: winner === enemyName && winner !== '',
                 hover: !gameOver
             }">
             <app-battlefield
@@ -41,7 +41,15 @@
     </div>
 </div>
 <div class="playground">
+  <div class="txt-centr">
+    Your field
+  </div>
+  <div class="timer">
     {{time}}
+  </div>
+  <div class="txt-centr">
+    Enemy field
+  </div>
 </div>
 <div class="playground">
     <div class="field-container">
@@ -64,7 +72,7 @@
         </button>
         <button
           [disabled]="!gameOn"
-          (click)="gameService.passGame()"
+          (click)="gameService.passGame(mode)"
           *ngIf="gameOn && !gameOver">
           Pass
         </button>

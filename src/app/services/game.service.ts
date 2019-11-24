@@ -45,7 +45,7 @@ export class GameService {
     readyToPlay: false,
     gameOn: false,
     gameOver: false,
-    playerIsShooter: Math.round(Math.random()) ? true : false
+    playerIsShooter: false
   };
 
 
@@ -73,9 +73,9 @@ export class GameService {
     // и записываем их в локальные данные на клиенте
     // либо инициализируем новую игру, если юзер на сервере есть, но открытых игр у него нет
     // (???)
-    console.log('constructor');
+    /*console.log('constructor');*/
     const id = localStorage.getItem('userID');
-    console.log('id', id);
+    /*console.log('id', id);*/
 
     if (id) {
       this.store.dispatch(new SetPlayer({
@@ -89,9 +89,11 @@ export class GameService {
       } else if (defaultLocalState) {
 
         if (JSON.parse(defaultLocalState).game.mode === 'online') {
-          console.log('JSON.parse(defaultLocalState).game.mode === online');
+          /*console.log('JSON.parse(defaultLocalState).game.mode === online');*/
           this.setLocalStorageIsState(defaultLocalState);
+
           this.wsService.openSocket(id, localStorage.getItem('username'));
+
         } else {
           this.setLocalStorageIsState(defaultLocalState);
         }
@@ -107,6 +109,9 @@ export class GameService {
 
     this.store.subscribe(state => {
       const { config, game, player, computer, enemy } = state;
+
+      // this.game(game);
+
       this.fieldSize = config.fieldSize;
       this.gameState = game;
       this.playerState = player;
@@ -152,19 +157,27 @@ export class GameService {
     if (this.enemyOnFire$) this.enemyOnFire$.unsubscribe();
   }
 
-  private setStateInit(mode) {
+  private setStateInit() {
     this.shipsService.playerShipsInit();
 
     this.store.dispatch(new SetPlayer({
       ships: [],
       field: this.battlefieldService.getField([])
     }));
-    if (mode === 'computer') {
+    if (this.gameState.mode === 'computer') {
       const ships = this.shipsService.generateShips();
       this.store.dispatch(new SetComputer({
         ships,
         field: this.battlefieldService.getField(ships),
         enemyCoords: this.setEnemyCoords()
+      }));
+      this.store.dispatch(new SetEnemy({
+        field: [],
+        username: ''
+      }));
+      this.store.dispatch(new SetGame({
+        ...this.settings,
+        playerIsShooter: Math.round(Math.random()) ? true : false
       }));
       if (this.enemyOnFire$) this.enemyOnFire$.unsubscribe();
     } else {
@@ -172,8 +185,8 @@ export class GameService {
         username: '',
         field: this.battlefieldService.getField([])
       }));
+      this.store.dispatch(new SetGame(this.settings));
     }
-    this.store.dispatch(new SetGame(this.settings));
   }
 
   private onGameOver = (enemy: ComputerStateInterface): void => {
@@ -255,14 +268,40 @@ export class GameService {
     }
   };
 
+  private definitionModeGame(): void {
+    const mode = this.gameState.mode;
+    switch (mode) {
+      case 'online':
+        /*alert('Играем онлайн');*/
+        if (this.wsService.socket) {
+          this.store.dispatch(new SetGame({
+            searchEnemy: true
+          }));
+          this.wsService.socket.close();    //  <- тут отсоединяем текущего юзера (???)
+        }
+        this.wsService.openSocket(
+          localStorage.getItem('userID'),
+          localStorage.getItem('username')
+        );
+        break;
+      case 'computer':
+        /*alert('Играем с ботом');*/
+        break;
+      default:
+        console.log(`== Log Error unknown mode: ${mode}`);
+    }
+  }
+
   gameInit(): void {
     console.log('gameInit');
-    this.setStateInit(this.gameState.mode);
+    this.definitionModeGame();
+    // this.wsService.findGameForUser(this.playerState.id, this.playerState.username);
+    this.setStateInit();
     localStorage.removeItem('gameState');
   }
 
-  passGame() {
-    if (this.gameState.mode === 'computer') {
+  passGame(mode: string): void {
+    if (mode === 'computer') {
       this.onGameOver(this.computerState);
     } else {
       this.wsService.passGame(this.playerState.id);
@@ -270,25 +309,34 @@ export class GameService {
   }
 
   game(): void {
+
     let shooter: string;
 
-    if (this.gameState.playerIsShooter || this.gameState.mode !== 'computer') {
-      shooter = this.gameState.playerIsShooter
-        ? this.playerState.username
-        : this.enemyState.username;
+    if (this.gameState.mode === 'computer') {
+      if (this.gameState.playerIsShooter) {
+        shooter = 'Player';
+      } else {
+        shooter = 'Computer';
+        this.enemyOnFire();
+      }
+      this.store.dispatch(new AddGameMessages([ `${shooter} shoots first` ]));
     } else {
-      shooter = 'Computer';
-      this.enemyOnFire();
+      this.wsService.startGame({
+        userID: localStorage.getItem('userID'),
+        username: localStorage.getItem('username'),
+        ships: this.playerState.ships,
+        field: this.playerState.field
+      });
+      this.store.dispatch(new AddGameMessages([`Waiting ${this.enemyState.username || 'another player'}`]));
     }
-
-    // if (shooter === 'Computer')
-    this.store.dispatch(new AddGameMessages([ `${shooter} shoots first` ]));
   }
 
   enemyOnFire(): void {
     this.store.dispatch(new AddGameMessages([ '-' ]));
+    /*console.log('enemyOnFire()')*/
 
     this.enemyOnFire$ = interval(600).subscribe(() => {
+      /*console.log('this.enemyOnFire$')*/
       const enemyCoords: CoordsInterface[] = [ ...this.computerState.enemyCoords ];
       const coordI: number = this.toolsService.getRandom(0, enemyCoords.length - 1);
       const coords: CoordsInterface = enemyCoords.splice(coordI, 1)[0];
@@ -313,48 +361,58 @@ export class GameService {
     target: string,
     shooter: string
   ): void {
-    const shooterData: ComputerStateInterface = this.definitionData(shooter);
-    const targetData: ComputerStateInterface = this.definitionData(target);
-    const firedCell: CellInterface = targetData.field[coordX][coordY];
-    const { cellStatus, isShip, idShip } = firedCell;
-    const missAction = () => {
-      firedCell.cellStatus = 'miss';
+    if (this.gameState.mode === 'computer') {
+      const shooterData: ComputerStateInterface = this.definitionData(shooter);
+      const targetData: ComputerStateInterface = this.definitionData(target);
+      const firedCell: CellInterface = targetData.field[coordX][coordY];
+      const { cellStatus, isShip, idShip } = firedCell;
+      const missAction = () => {
+        firedCell.cellStatus = 'miss';
 
-      this.store.dispatch(new SetGame({
-        playerIsShooter: !this.gameState.playerIsShooter
-      }));
+        this.store.dispatch(new SetGame({
+          playerIsShooter: !this.gameState.playerIsShooter
+        }));
 
-      this.store.dispatch(new AddGameMessages([
-        `${shooterData.username} missed ${targetData.username} on x: ${coordY + 1} y: ${coordX + 1}`
-      ]));
-    };
-    const hitAction = () => {
-      let message: string;
-      firedCell.cellStatus = 'hit';
-      const ship: ShipInterface = targetData.ships.find((ship: ShipInterface) => ship.id === idShip);
-      ship.hits++;
-      const { hits, size, coords } = ship;
+        this.store.dispatch(new AddGameMessages([
+          `${shooterData.username} missed ${targetData.username} on x: ${coordY + 1} y: ${coordX + 1}`
+        ]));
+      };
+      const hitAction = () => {
+        let message: string;
+        firedCell.cellStatus = 'hit';
+        const ship: ShipInterface = targetData.ships.find((ship: ShipInterface) => ship.id === idShip);
+        ship.hits++;
+        const { hits, size, coords } = ship;
 
-      if (hits === size) {
-        coords.forEach((coords: CoordsInterface) => this.setMissCellStatusAround(coords, target));
-        ship.isSunk = true;
+        if (hits === size) {
+          coords.forEach((coords: CoordsInterface) => this.setMissCellStatusAround(coords, target));
+          ship.isSunk = true;
 
-        message = `${shooterData.username} sank a ${targetData.username}'s ship on x: ${coordY + 1} y: ${coordX + 1}`;
-      } else {
-        message = `${shooterData.username} shot ${targetData.username} on x: ${coordY + 1} y: ${coordX + 1}`;
+          message = `${shooterData.username} sank a ${targetData.username}'s ship on x: ${coordY + 1} y: ${coordX + 1}`;
+        } else {
+          message = `${shooterData.username} shot ${targetData.username} on x: ${coordY + 1} y: ${coordX + 1}`;
+        }
+        this.store.dispatch(new AddGameMessages([ message ]));
+      };
+
+      // start if
+      if (!cellStatus && !this.gameState.gameOver) {
+        isShip ? hitAction() : missAction();
+        this.store.dispatch(this.definitionChangeFieldReducer(target, targetData.field));
       }
-      this.store.dispatch(new AddGameMessages([ message ]));
-    };
 
-    // start if
-    if (!cellStatus && !this.gameState.gameOver) {
-      isShip ? hitAction() : missAction();
-      this.store.dispatch(this.definitionChangeFieldReducer(target, targetData.field));
-    }
-
-    // end if
-    if (targetData.ships.every((ship: ShipInterface) => ship.isSunk) && !this.gameState.gameOver) {
-      this.onGameOver(shooterData);
+      // end if
+      if (targetData.ships.every((ship: ShipInterface) => ship.isSunk) && !this.gameState.gameOver) {
+        this.onGameOver(shooterData);
+      }
+    } else {
+      this.wsService.sendFiredCell(
+        {
+          coordX,
+          coordY
+        },
+        localStorage.getItem('userID')
+      );
     }
   }
 }

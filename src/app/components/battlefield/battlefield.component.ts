@@ -38,6 +38,8 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
   public gameOn: boolean;
   public gameOver: boolean;
   public playerIsShooter: boolean;
+  public searchEnemy: boolean;
+  private mode: string;
   private playerShips: ShipInterface[];
   private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
 
@@ -79,7 +81,7 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
     this.gameService.onFire(coordX, coordY, 'enemy', 'player');
 
     // если игрок промахнулся, то стреляет компьютер
-    if (!this.playerIsShooter) {
+    if (this.mode === 'computer' && !this.playerIsShooter) {
       this.gameService.enemyOnFire();
     }
   }
@@ -160,10 +162,12 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.store.pipe(select(selectGameData), takeUntil(this.destroy)).subscribe(gameState => {
-      const { gameOn, gameOver, playerIsShooter } = gameState;
+      const { gameOn, gameOver, playerIsShooter, searchEnemy, mode } = gameState;
       this.gameOn = gameOn;
       this.gameOver = gameOver;
       this.playerIsShooter = playerIsShooter;
+      this.searchEnemy = searchEnemy;
+      this.mode = mode;
     });
     this.store.pipe(select(selectPlayerShips), takeUntil(this.destroy)).subscribe(playerShips => {
       this.playerShips = playerShips;

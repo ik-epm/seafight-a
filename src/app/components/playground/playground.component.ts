@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ReplaySubject, Subscription, timer } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { takeUntil, min } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { GameAdviceInterface } from 'src/app/interfaces/gameAdvice.interface';
 import { CellInterface } from '../../interfaces/cell.interface';
@@ -25,18 +25,19 @@ import { AppStateInterface } from '../../store/state/app.state';
 export class PlaygroundComponent implements OnInit, OnDestroy {
 
   public playerName: string;
+  public enemyName: string;
   public gameOn: boolean;
   public gameOver: boolean;
   public winner: string;
   public mode: string;
-  private readyToPlay: boolean;
   public playerField: CellInterface[][];
   public computerField: CellInterface[][];
   public enemyField: CellInterface[][];
+  public messages: string[];
+  private readyToPlay: boolean;
   private gameAdvices: GameAdviceInterface[];
   private preGameAdvices: GameAdviceInterface[];
   private shipsData: ShipsDataInterface[];
-  public messages: string[];
 
   public advice: GameAdviceInterface;
   private currentAdviceIndex = 0;
@@ -55,8 +56,8 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
     });
   }
 
-  // таймер, который дает советы каждые 15 секунд, начиная со второй секунды
-  advice$: Subscription = timer(2e3, 15e3)
+    // таймер, который дает советы каждые 15 секунд, начиная со второй секунды
+    advice$: Subscription = timer(2e3, 15e3)
     .pipe(takeUntil(this.destroy))
     .subscribe(num => this.getAdvice(num));
 
@@ -73,7 +74,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
   }
 
 
-// ------------- Таймер ->> ------------- //
+  // ------------- Таймер ->> ------------- //
   time: string;
   timer$: Subscription = timer(0).pipe(takeUntil(this.destroy)).subscribe();
 
@@ -127,6 +128,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
       } = allState;
       this.playerField = field;
       this.playerName = username;
+      this.enemyName = enemy.username;
       this.messages = messages;
       this.gameOn = gameOn;
       this.gameOver = gameOver;

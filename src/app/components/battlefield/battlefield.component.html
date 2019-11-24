@@ -5,7 +5,7 @@
     <div
       [ngClass] = "{ rows: true }"
       *ngFor="let row of field; let i = index">
-        <div
+        <button
             [ngClass] = "{
                 isPointer: (isEnemyField && playerIsShooter && !gameOver)
                     || (!isEnemyField && !gameOn && shipsService.currentShip),
@@ -15,7 +15,9 @@
                 miss: field[i][j].cellStatus === 'miss'
             }"
             *ngFor="let cell of field; let j = index"
-            (click) = "onCellClick(field[i][j])">
-        </div>
+            (click) = "onCellClick(field[i][j])"
+            [disabled]="(!playerIsShooter && isEnemyField)
+                || (playerIsShooter && !isEnemyField)">
+        </button>
     </div>
 </div>
