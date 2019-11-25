@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
+import { Store, select } from '@ngrx/store';
 
 import { CellInterface } from 'src/app/interfaces/cell.interface';
 import { ShipInterface } from 'src/app/interfaces/ship.interface';
 import { ShipsDataInterface } from 'src/app/interfaces/shipsData.interface';
-import { CoordsInterface } from 'src/app/interfaces/coords.interface';
 
 import { ToolsService } from './tools.service';
+
+import { AppStateInterface } from '../store/state/app.state';
+
+import { selectConfigData } from '../store/selectors/config.selector';
 
 
 @Injectable({
@@ -14,16 +18,22 @@ import { ToolsService } from './tools.service';
 
 export class ShipsService {
 
-  shipsData: ShipsDataInterface[];
-  fieldSize: number;
-  currentShip: ShipInterface = null;
-  allShips: any[][];
-  occupiedPlayerCells: boolean[][];
+  private shipsData: ShipsDataInterface[];
+  private fieldSize: number;
+
+  public currentShip: ShipInterface = null;
+  public allShips: any[][];
+  public occupiedPlayerCells: boolean[][];
 
   constructor(
-    private toolsService: ToolsService
+    private toolsService: ToolsService,
+    private store: Store<AppStateInterface>
   ) {
-    this.playerShipsInit();
+    this.store.pipe(select(selectConfigData)).subscribe(config => {
+      const { fieldSize, shipsData } = config;
+      this.fieldSize = fieldSize;
+      this.shipsData = shipsData;
+    });
   }
 
 
@@ -43,8 +53,12 @@ export class ShipsService {
 
   // ручная установка одного корабля
   // аргументы: корабль, который нужно установить, начальная клетка и направление корабля
-  placeShip(currentShip: ShipInterface, cell: CellInterface, direction: number): ShipInterface {
-    const coords: Array<CellInterface> = [];
+  placeShip(
+    currentShip: ShipInterface,
+    cell: CellInterface,
+    direction: number
+  ): ShipInterface {
+    const coords: CellInterface[] = [];
     const directionX: number = direction;                  // 0 = horizontal, 1 = vertical
     const directionY: number = directionX ? 0 : 1;         // 0 = vertical, 1 = horizontal
 
@@ -152,7 +166,7 @@ export class ShipsService {
           const maxCoordY = this.fieldSize - 1 - (size - 1 ) * directionY;
           coordX = this.toolsService.getRandom(0, maxCoordX);
           coordY = this.toolsService.getRandom(0, maxCoordY);
-        } while (this.isOccupied (occupiedCells, size, coordX, coordY, directionX, directionY));
+        } while (this.isOccupied(occupiedCells, size, coordX, coordY, directionX, directionY));
 
         for (let i = 0; i < size; i++) {
           coords.push({
@@ -184,14 +198,6 @@ export class ShipsService {
         this.shipsData[i].size
       ));
     });
-
-    // Object.keys(this.shipsData).forEach((ship) => {
-    //   ships.push(...oneTypeShips(
-    //     this.shipsData[ship].type,
-    //     this.shipsData[ship].number,
-    //     this.shipsData[ship].size
-    //   ));
-    // });
 
     return ships;
   }

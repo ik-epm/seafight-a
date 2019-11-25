@@ -5,12 +5,12 @@
     display: inline-block;
     border: 2px solid #1976d2;
     position: absolute;
-    top: 0px;
-    left: 0px;
+    top: 0;
+    left: 0;
     border-radius: 3px;
     background-color: #1976d2;
     height: 100%;
-    margin: 0px 10px 10px 0px;
+    margin: 0 10px 10px 0;
     cursor: pointer;
     // &:hover {
         // border: 1px solid red;
@@ -18,7 +18,7 @@
 }
 
 .currentShip {
-    box-shadow: 0 0 0px 2px #fff, 0 0 1px 3px #1976d2;
+    box-shadow: 0 0 0 2px #fff, 0 0 1px 3px #1976d2;
 }
 
 .fourDeckShips {
@@ -40,7 +40,7 @@
 .ships-container {
     height: 10%;
     // outline: 1px solid red;
-    margin: 15px 0px;
+    margin: 15px 0;
     position: relative;
 }
 

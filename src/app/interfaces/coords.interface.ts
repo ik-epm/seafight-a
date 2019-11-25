@@ -1,4 +1,4 @@
 export interface CoordsInterface {
-  coordX: number,
-  coordY: number
+  coordX: number;
+  coordY: number;
 }
