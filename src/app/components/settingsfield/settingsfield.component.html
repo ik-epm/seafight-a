@@ -6,7 +6,7 @@
       style="margin-bottom: auto">
     </app-ships>
 
-    <button *ngIf="!searchEnemy"
+    <button *ngIf="(!searchEnemy && !gameOn)"
       class="button-manual"
       (click)="onManual()"
       [disabled]="gameOn || searchEnemy || !playerShips.length">
@@ -14,16 +14,17 @@
     </button>
   </div>
 
-  <div class="buttons-container">
-    <button *ngIf="!searchEnemy"
+  <div class="buttons-container" *ngIf="(!searchEnemy && !gameOn) else waitingBlock">
+    <button
       class="button button-auto"
       (click)="onAuto()"
       [disabled]="gameOn || searchEnemy">
       Auto
     </button>
 
-    <button *ngIf="!searchEnemy && readyToPlay"
+    <button
       class="button button-play"
+      *ngIf="readyToPlay"
       [disabled]="gameOn || searchEnemy"
       (click)="onPlay()">
         <span class="button-line-top"></span>
@@ -33,4 +34,5 @@
         Play
     </button>
   </div>
+  <ng-template #waitingBlock>Waiting an enemy...</ng-template>
 </div>

@@ -17,7 +17,7 @@ import { SetPlayer, AddPlayerShip } from '../../store/actions/player.actions';
 import { SetGame } from '../../store/actions/game.actions';
 
 import { selectPlayerShips } from '../../store/selectors/player.selector';
-import { selectGameData } from '../../store/selectors/game.selector';
+import { selectGameData, selectPlayerIsShooter } from '../../store/selectors/game.selector';
 
 
 @Component({
@@ -41,7 +41,7 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
   public searchEnemy: boolean;
   private mode: string;
   private playerShips: ShipInterface[];
-  private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
+  private destroyed$: ReplaySubject<any> = new ReplaySubject<any>(1);
 
   constructor(
     private gameService: GameService,
@@ -74,7 +74,7 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
     }
   }
 
-  private onFireAction(cell) {
+  private onFireAction(cell): void {
     // стреляем, если поле противника и игрок - стрелок
     const { coordX, coordY } = cell;
 
@@ -160,22 +160,21 @@ export class BattlefieldComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnInit() {
-    this.store.pipe(select(selectGameData), takeUntil(this.destroy)).subscribe(gameState => {
-      const { gameOn, gameOver, playerIsShooter, searchEnemy, mode } = gameState;
+  ngOnInit(): void {
+    this.store.pipe(takeUntil(this.destroyed$)).subscribe(state => {
+      const { player, game } = state;
+      const { gameOn, gameOver, playerIsShooter, searchEnemy, mode } = game;
       this.gameOn = gameOn;
       this.gameOver = gameOver;
       this.playerIsShooter = playerIsShooter;
       this.searchEnemy = searchEnemy;
       this.mode = mode;
-    });
-    this.store.pipe(select(selectPlayerShips), takeUntil(this.destroy)).subscribe(playerShips => {
-      this.playerShips = playerShips;
+      this.playerShips = player.ships;
     });
   }
 
-  ngOnDestroy() {
-    this.destroy.next(null);
-    this.destroy.complete();
+  ngOnDestroy(): void {
+    this.destroyed$.next(null);
+    this.destroyed$.complete();
   }
 }

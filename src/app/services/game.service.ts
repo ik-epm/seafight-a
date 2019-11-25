@@ -75,7 +75,7 @@ export class GameService {
     // (???)
     /*console.log('constructor');*/
     const id = localStorage.getItem('userID');
-    /*console.log('id', id);*/
+    // console.log('id2', id)
 
     if (id) {
       this.store.dispatch(new SetPlayer({
@@ -110,14 +110,17 @@ export class GameService {
     this.store.subscribe(state => {
       const { config, game, player, computer, enemy } = state;
 
-      // this.game(game);
-
       this.fieldSize = config.fieldSize;
       this.gameState = game;
       this.playerState = player;
       this.computerState = computer;
       this.enemyState = enemy;
 
+      /* Сохранение первого дефолтного состояния игры:
+      поле пустое,
+      отсутствуют сообщения,
+      игра не началась и тд
+      */
       this.saveStateIsLocalStorage(state);
     });
   }
@@ -164,6 +167,7 @@ export class GameService {
       ships: [],
       field: this.battlefieldService.getField([])
     }));
+
     if (this.gameState.mode === 'computer') {
       const ships = this.shipsService.generateShips();
       this.store.dispatch(new SetComputer({
@@ -250,7 +254,7 @@ export class GameService {
     }
 
     return { ...state };
-  };
+  }
 
   private definitionChangeFieldReducer = (type, field) => {
     if (this.gameState.mode === 'computer' && type === 'enemy') {
@@ -266,19 +270,19 @@ export class GameService {
         field
       });
     }
-  };
+  }
 
   private definitionModeGame(): void {
     const mode = this.gameState.mode;
     switch (mode) {
       case 'online':
-        /*alert('Играем онлайн');*/
         if (this.wsService.socket) {
           this.store.dispatch(new SetGame({
             searchEnemy: true
           }));
           this.wsService.socket.close();    //  <- тут отсоединяем текущего юзера (???)
         }
+        // console.log('localStorage.getItem(username)', localStorage.getItem('username'));
         this.wsService.openSocket(
           localStorage.getItem('userID'),
           localStorage.getItem('username')
@@ -295,7 +299,6 @@ export class GameService {
   gameInit(): void {
     console.log('gameInit');
     this.definitionModeGame();
-    // this.wsService.findGameForUser(this.playerState.id, this.playerState.username);
     this.setStateInit();
     localStorage.removeItem('gameState');
   }
@@ -309,7 +312,6 @@ export class GameService {
   }
 
   game(): void {
-
     let shooter: string;
 
     if (this.gameState.mode === 'computer') {
@@ -327,7 +329,7 @@ export class GameService {
         ships: this.playerState.ships,
         field: this.playerState.field
       });
-      this.store.dispatch(new AddGameMessages([`Waiting ${this.enemyState.username || 'another player'}`]));
+      // this.store.dispatch(new AddGameMessages([`Waiting ${this.enemyState.username || 'another player'}`]));
     }
   }
 
@@ -372,6 +374,7 @@ export class GameService {
         this.store.dispatch(new SetGame({
           playerIsShooter: !this.gameState.playerIsShooter
         }));
+        // console.log('поменял', this.gameState.playerIsShooter)
 
         this.store.dispatch(new AddGameMessages([
           `${shooterData.username} missed ${targetData.username} on x: ${coordY + 1} y: ${coordX + 1}`

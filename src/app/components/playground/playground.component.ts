@@ -11,6 +11,7 @@ import { GameService } from 'src/app/services/game.service';
 import { ShipsService } from '../../services/ships.service';
 
 import { AppStateInterface } from '../../store/state/app.state';
+import { WebSocketService } from 'src/app/services/websocket.service';
 
 @Component({
   selector: 'app-playground',
@@ -30,6 +31,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
   public gameOver: boolean;
   public winner: string;
   public mode: string;
+  public time: string;
   public playerField: CellInterface[][];
   public computerField: CellInterface[][];
   public enemyField: CellInterface[][];
@@ -46,18 +48,12 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
   constructor(
     private gameService: GameService,
     private shipsService: ShipsService,
+    private wsService: WebSocketService,
     private store: Store<AppStateInterface>
-  ) {
-    timer(5e3, 7e4)                       // <- удалить этот таймер, он для тестов, обновляет нужный таймер каждые 70 секунд
-    .pipe(takeUntil(this.destroy))
-    .subscribe(() => {
-      this.timer$.unsubscribe();
-      this.timer$ = this.setTimer();
-    });
-  }
+  ) { }
 
-    // таймер, который дает советы каждые 15 секунд, начиная со второй секунды
-    advice$: Subscription = timer(2e3, 15e3)
+  // таймер, который дает советы каждые 15 секунд, начиная со второй секунды
+  advice$: Subscription = timer(2e3, 15e3)
     .pipe(takeUntil(this.destroy))
     .subscribe(num => this.getAdvice(num));
 
@@ -72,27 +68,6 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
       );
     }
   }
-
-
-  // ------------- Таймер ->> ------------- //
-  time: string;
-  timer$: Subscription = timer(0).pipe(takeUntil(this.destroy)).subscribe();
-
-  setTimer(): Subscription {
-    const delay = 1e3;                     // таймер устанавливаем на 1 секунду
-    let callback;
-    console.log('запускаем таймер');
-    callback = (seconds: number) => {
-      const minutes: number = Math.floor(seconds / 60);
-      this.time = ('00' + minutes).slice(minutes < 10 ? -1 : -2) + ':' + ('00' + (seconds - minutes * 60)).slice(-2);
-    };
-
-    return timer(0, delay)
-    .pipe(takeUntil(this.destroy))
-    .subscribe(callback);
-  }
-// ------------- <<- Таймер ------------- //
-
 
   private generateAdvice(advices: GameAdviceInterface[], num: number): void {
     // генерируем рандомный номер подсказки
@@ -119,7 +94,8 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
           gameOver,
           winner,
           mode,
-          readyToPlay
+          readyToPlay,
+          time
         },
         computer,
         enemy,
@@ -134,6 +110,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
       this.gameOver = gameOver;
       this.winner = winner;
       this.mode = mode;
+      this.time = time;
       this.readyToPlay = readyToPlay;
       this.computerField = computer.field;
       this.enemyField = enemy.field;

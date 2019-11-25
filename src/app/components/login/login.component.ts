@@ -45,17 +45,18 @@ export class LoginComponent implements OnInit, OnDestroy {
     /*console.log('mode', mode)*/
 
     if (this.playerName !== username || this.mode !== mode) {
+
+      const id = username + Date.now();
+
       if (this.wsService.socket) {
         this.gameService.passGame(this.mode);
       }
 
-      const id = username + Date.now();
-
       this.setDataState({ id, username, mode });
+
       // инициализируем новую игру
       this.gameService.gameInit();
     }
-
   }
 
   private setDataState({ username, id, mode }): void {
@@ -67,6 +68,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       mode
     }));
     // записываем в localStorage user
+    // console.log('id1', id)
     localStorage.setItem('userID', id);
     localStorage.setItem('username', username);
     /*console.log('--- Log --- localStorage id player', localStorage);*/
@@ -96,7 +98,12 @@ export class LoginComponent implements OnInit, OnDestroy {
         ]
       ),
       mode: new FormControl(
-        {disabled: true, value: 'online'},
+        // Заблокирован бота
+        /*this.mode,*/
+        {
+          disabled: true,
+          value: 'online'
+        },
         [Validators.required]
       )
     });

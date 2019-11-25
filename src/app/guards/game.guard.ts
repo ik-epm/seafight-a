@@ -27,8 +27,8 @@ export class GameGuard implements CanActivate {
     private router: Router,
     private store: Store<AppStateInterface>
   ) {
-    this.store.pipe(select(selectPlayerName)).subscribe(playerName => {
-      this.isUsername = playerName !== '';
+    this.store.pipe(select(selectPlayerName)).subscribe(value => {
+      this.isUsername = value !== '';
     });
   }
 

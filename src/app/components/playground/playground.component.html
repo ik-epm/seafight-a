@@ -76,5 +76,10 @@
           *ngIf="gameOn && !gameOver">
           Pass
         </button>
+        <button
+        (click)="gameService.game()"
+        *ngIf="!gameOver && mode === 'online' && !wsService.socket">
+        Connect
+      </button>
     </div>
 </div>

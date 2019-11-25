@@ -13,7 +13,7 @@ import { BattlefieldService } from 'src/app/services/battlefield.service';
 import { AppStateInterface } from '../../store/state/app.state';
 
 import { SetPlayer } from '../../store/actions/player.actions';
-import { SetGame, AddGameMessages } from '../../store/actions/game.actions';
+import {AddGameMessages, SetGame} from '../../store/actions/game.actions';
 
 import { selectConfigData } from '../../store/selectors/config.selector';
 import { selectGameData } from '../../store/selectors/game.selector';
@@ -33,8 +33,8 @@ export class SettingsfieldComponent implements OnInit, OnDestroy {
 
   public shipsData: ShipsDataInterface[];
   public playerShips: ShipInterface[];
-  public gameOn = false;
-  public searchEnemy = false;
+  public gameOn: boolean;
+  public searchEnemy: boolean;
   public readyToPlay: boolean;
   private fieldSize: number;
   private mode: string;
@@ -76,9 +76,7 @@ export class SettingsfieldComponent implements OnInit, OnDestroy {
   onPlay(): void {
     // запускаем игру
     if (this.mode === 'online') {
-      this.store.dispatch(new SetGame({
-        searchEnemy: true
-      }));
+
     } else {
       this.store.dispatch(new SetGame({
         gameOn: true

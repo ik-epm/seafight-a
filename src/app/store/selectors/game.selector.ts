@@ -2,6 +2,8 @@ import { createSelector } from '@ngrx/store';
 
 import { AppStateInterface } from '../state/app.state';
 import { GameStateInterface } from '../state/game.state';
+import {PlayerStateInterface} from '../state/player.state';
+import {selectPlayerData} from './player.selector';
 
 const gameState = (state: AppStateInterface) => state.game;
 
@@ -33,4 +35,9 @@ export const selectGameOn = createSelector(
 export const selectGameReadyToPlay = createSelector(
   gameState,
   (gameData: GameStateInterface): boolean => gameData.readyToPlay
+);
+
+export const selectGameTime = createSelector(
+  gameState,
+  (gameData: GameStateInterface): string => gameData.time
 );

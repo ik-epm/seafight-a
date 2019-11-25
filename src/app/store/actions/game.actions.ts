@@ -29,6 +29,7 @@ export class SetGame implements Action {
       mode?: string;
       messages?: string[];
       searchEnemy?: boolean;
+      time?: string;
     }
   ) { }
 }
