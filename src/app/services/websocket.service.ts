@@ -15,7 +15,8 @@ import { AddGameMessages, SetGame } from '../store/actions/game.actions';
 import { SetPlayer } from '../store/actions/player.actions';
 import { SetEnemy } from '../store/actions/enemy.actions';
 
-import { selectPlayerData } from '../store/selectors/player.selector';
+import {selectPlayerData, selectPlayerField} from '../store/selectors/player.selector';
+import {selectGameOn} from "../store/selectors/game.selector";
 
 
 @Injectable({
@@ -28,6 +29,7 @@ export class WebSocketService {
   // private playerShips: ShipInterface[];
   private enemyUsername: string;
   private playerField: CellInterface[][];
+  private gameOn: boolean;
   private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
   private timer$: Subscription = timer(0).pipe(takeUntil(this.destroy)).subscribe();
 
@@ -36,30 +38,32 @@ export class WebSocketService {
     private battlefieldService: BattlefieldService,
     private store: Store<AppStateInterface>
   ) {
-    this.store.pipe(select(selectPlayerData)).subscribe(playerState => {
-      const { field, ships } = playerState;
-      this.playerField = field;
-      // this.playerShips = ships;
+    this.store.pipe(select(selectPlayerField)).subscribe(value => {
+      this.playerField = value;
+    });
+    this.store.pipe(select(selectGameOn)).subscribe(value => {
+      this.gameOn = value;
     });
   }
 
   private setTimer(seconds: number): void {
     const delay = 1e3; // таймер устанавливаем на 1 секунду
-    console.log('запускаем таймер');
+    /*console.log('запускаем таймер');*/
     const callback = () => {
       seconds--;
-      // console.log('seconds', seconds);
       if (seconds < 0) {
         seconds = 0;
       }
       const minutes: number = Math.floor(seconds / 60);
-      // console.log('minutes', minutes);
       // Доработать обнуление переменной при обновлении страницы
       const time: string = ('00' + minutes).slice(minutes < 10 ? -1 : -2) + ':' + ('00' + (seconds - minutes * 60)).slice(-2);
-      // console.log('time', time);
-      this.store.dispatch(new SetGame({
-        time
-      }));
+      if (seconds === 0 && !this.gameOn) {
+        // костыль
+      } else {
+        this.store.dispatch(new SetGame({
+          time/*: time === '0:00' && seconds !== 0 ? 'Время вышло' : time*/
+        }));
+      }
     };
 
     this.timer$ = timer(0, delay)
@@ -68,7 +72,7 @@ export class WebSocketService {
   }
 
   private onMessageFromServer(data) {
-    console.log(`Metod: ${data.state}, data:`, data, 'data.time', data.time);
+    /*console.log(`Metod: ${data.state}, data:`, data, 'data.time', data.time);*/
 
     this.timer$.unsubscribe();
     switch (data.state) {
@@ -76,14 +80,14 @@ export class WebSocketService {
         // если пришли данные с настройками игры (data.state = 'FIND_GAME'),
         // инициализируем игру с пришедшими с сервера данными, например:
         this.setDataStateBeginingGame(data);
-        this.setTimer(/*data.time*/ data.time);
+        this.setTimer(data.time);
         break;
 
       case 'START_GAME':
         // если пришли данные о готовности/неготовности игроков к игре,
         // то записываем эти данные куда нам надо, например:
         this.setDataStateStartingGame(data);
-        this.setTimer(/*data.time*/ data.time);
+        this.setTimer(data.time);
         break;
 
       case 'FIRE':
@@ -91,7 +95,7 @@ export class WebSocketService {
         // то обновляем аналогичные данные в клиенте, например:
         this.setDataStateFire(data);
         if (!data.gameOver) {
-          this.setTimer(/*data.time*/ data.time);
+          this.setTimer(data.time);
         }
         break;
 
@@ -157,8 +161,8 @@ export class WebSocketService {
 
   private setDataStateFire(data) {
     this.store.dispatch(new SetGame({
-      gameOver: data.gameOver,
       gameOn: data.gameOn,
+      gameOver: data.gameOver,
       messages: data.messages,
       winner: data.winner,
       playerIsShooter: data.playerIsShooter,
@@ -231,11 +235,11 @@ export class WebSocketService {
     // событие, которое срабатывает, когда соединение закрывается
     this.socket.onclose = (event) => {
       if (event.wasClean) {
-        console.log(`Connection closed, code: ${event.code} reason: ${event.reason}`);
+        /*console.log(`Connection closed, code: ${event.code} reason: ${event.reason}`);*/
       } else {
         // например, сервер убил процесс или сеть недоступна
         // обычно в этом случае event.code 1006
-        console.log(this.socket);
+        /*console.log(this.socket);*/
         this.socket = null;
         this.store.dispatch(new AddGameMessages(['Connection is broken']));
       }

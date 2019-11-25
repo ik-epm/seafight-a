@@ -78,7 +78,7 @@
         </button>
         <button
         (click)="gameService.game()"
-        *ngIf="!gameOver && mode === 'online' && !wsService.socket">
+        *ngIf="!wsService.socket && !gameOver && mode === 'online'">
         Connect
       </button>
     </div>

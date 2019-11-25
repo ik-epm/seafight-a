@@ -42,7 +42,6 @@ export class LoginComponent implements OnInit, OnDestroy {
     // если логин в форме отличается от текущего юзера, то подключаемся к новой игре
     const username = this.myForm.value.username;
     const mode = this.myForm.controls.mode.value;
-    /*console.log('mode', mode)*/
 
     if (this.playerName !== username || this.mode !== mode) {
 
@@ -68,10 +67,8 @@ export class LoginComponent implements OnInit, OnDestroy {
       mode
     }));
     // записываем в localStorage user
-    // console.log('id1', id)
     localStorage.setItem('userID', id);
     localStorage.setItem('username', username);
-    /*console.log('--- Log --- localStorage id player', localStorage);*/
   }
 
   ngOnInit() {
@@ -82,7 +79,6 @@ export class LoginComponent implements OnInit, OnDestroy {
       if (this.mode
           && this.mode !== mode
           && mode === 'computer') {
-        console.log('началось')
         this.gameService.passGame(this.mode);
       }
       this.mode = mode;

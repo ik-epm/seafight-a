@@ -2,8 +2,8 @@ import { createSelector } from '@ngrx/store';
 
 import { AppStateInterface } from '../state/app.state';
 import { EnemyStateInterface } from '../state/enemy.state';
-import {ComputerStateInterface} from '../state/computer.state';
-import {CellInterface} from '../../interfaces/cell.interface';
+import { ComputerStateInterface } from '../state/computer.state';
+import { CellInterface } from '../../interfaces/cell.interface';
 
 const enemyState = (state: AppStateInterface) => state.enemy;
 

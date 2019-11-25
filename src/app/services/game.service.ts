@@ -45,7 +45,8 @@ export class GameService {
     readyToPlay: false,
     gameOn: false,
     gameOver: false,
-    playerIsShooter: false
+    playerIsShooter: false,
+    time: ''
   };
 
 
@@ -73,9 +74,7 @@ export class GameService {
     // и записываем их в локальные данные на клиенте
     // либо инициализируем новую игру, если юзер на сервере есть, но открытых игр у него нет
     // (???)
-    /*console.log('constructor');*/
     const id = localStorage.getItem('userID');
-    // console.log('id2', id)
 
     if (id) {
       this.store.dispatch(new SetPlayer({
@@ -84,12 +83,10 @@ export class GameService {
       const localState = localStorage.getItem('gameState');
       const defaultLocalState = localStorage.getItem('defaultState');
       if (localState) {
-        /*console.log('localState', localState)*/
         this.setLocalStorageIsState(localState);
       } else if (defaultLocalState) {
 
         if (JSON.parse(defaultLocalState).game.mode === 'online') {
-          /*console.log('JSON.parse(defaultLocalState).game.mode === online');*/
           this.setLocalStorageIsState(defaultLocalState);
 
           this.wsService.openSocket(id, localStorage.getItem('username'));
@@ -282,7 +279,6 @@ export class GameService {
           }));
           this.wsService.socket.close();    //  <- тут отсоединяем текущего юзера (???)
         }
-        // console.log('localStorage.getItem(username)', localStorage.getItem('username'));
         this.wsService.openSocket(
           localStorage.getItem('userID'),
           localStorage.getItem('username')
@@ -297,7 +293,7 @@ export class GameService {
   }
 
   gameInit(): void {
-    console.log('gameInit');
+    /*console.log('gameInit');*/
     this.definitionModeGame();
     this.setStateInit();
     localStorage.removeItem('gameState');
@@ -335,10 +331,8 @@ export class GameService {
 
   enemyOnFire(): void {
     this.store.dispatch(new AddGameMessages([ '-' ]));
-    /*console.log('enemyOnFire()')*/
 
     this.enemyOnFire$ = interval(600).subscribe(() => {
-      /*console.log('this.enemyOnFire$')*/
       const enemyCoords: CoordsInterface[] = [ ...this.computerState.enemyCoords ];
       const coordI: number = this.toolsService.getRandom(0, enemyCoords.length - 1);
       const coords: CoordsInterface = enemyCoords.splice(coordI, 1)[0];
@@ -374,7 +368,6 @@ export class GameService {
         this.store.dispatch(new SetGame({
           playerIsShooter: !this.gameState.playerIsShooter
         }));
-        // console.log('поменял', this.gameState.playerIsShooter)
 
         this.store.dispatch(new AddGameMessages([
           `${shooterData.username} missed ${targetData.username} on x: ${coordY + 1} y: ${coordX + 1}`

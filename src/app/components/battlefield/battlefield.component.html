@@ -16,8 +16,8 @@
             }"
             *ngFor="let cell of field; let j = index"
             (click) = "onCellClick(field[i][j])"
-            [disabled]="(!playerIsShooter && isEnemyField)
-                || (playerIsShooter && !isEnemyField)">
+            [disabled]="gameOver && (!playerIsShooter && isEnemyField
+                || playerIsShooter && !isEnemyField)">
         </button>
     </div>
 </div>
