@@ -90,7 +90,9 @@ export class WebSocketService {
         // если пришли данные с обновленными настройками игры (поля игроков, простреленные клетки, статус игры и тд),
         // то обновляем аналогичные данные в клиенте, например:
         this.setDataStateFire(data);
-        this.setTimer(/*data.time*/ data.time);
+        if (!data.gameOver) {
+          this.setTimer(/*data.time*/ data.time);
+        }
         break;
 
       case 'PASS':
@@ -109,6 +111,9 @@ export class WebSocketService {
     }
     if (data.gameOver) {
       this.enemyUsername = '';
+      this.store.dispatch(new SetGame({
+        time: ''
+      }));
     }
   }
 
